@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WK 2026 Poule</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">⚽</span>
+      <h1>WK 2026 POULE<span>Familie Voorspellingen</span></h1>
+    </div>
+    <nav>
+      <a href="/" class="nav-link active">Voorspellingen</a>
+      <a href="/leaderboard.html" class="nav-link">Klassement</a>
+      <a href="/rules.html" class="nav-link">Regels</a>
+      <a href="/admin.html" id="admin-nav-link" class="nav-link" style="display:none">Admin</a>
+      <span id="user-chip" class="user-chip"></span>
+      <button class="btn-logout" onclick="logout()">Uitloggen</button>
+    </nav>
+  </div>
+</header>
+
+<div class="page">
+  <!-- Stage tabs -->
+  <div class="stage-tabs" id="stage-tabs">
+    <button class="stage-tab" data-stage="group">Groepsfase</button>
+    <button class="stage-tab" data-stage="r32">Ronde van 32</button>
+    <button class="stage-tab" data-stage="r16">Ronde van 16</button>
+    <button class="stage-tab" data-stage="qf">Kwartfinale</button>
+    <button class="stage-tab" data-stage="sf">Halve Finale</button>
+    <button class="stage-tab" data-stage="3rd">3e Plaats</button>
+    <button class="stage-tab" data-stage="final">Finale</button>
+  </div>
+
+  <!-- Group sub-tabs (only shown for group stage) -->
+  <div class="group-tabs" id="group-tabs" style="display:none">
+    <button class="group-tab" data-group="A">Groep A</button>
+    <button class="group-tab" data-group="B">Groep B</button>
+    <button class="group-tab" data-group="C">Groep C</button>
+    <button class="group-tab" data-group="D">Groep D</button>
+    <button class="group-tab" data-group="E">Groep E</button>
+    <button class="group-tab" data-group="F">Groep F</button>
+    <button class="group-tab" data-group="G">Groep G</button>
+    <button class="group-tab" data-group="H">Groep H</button>
+    <button class="group-tab" data-group="I">Groep I</button>
+    <button class="group-tab" data-group="J">Groep J</button>
+    <button class="group-tab" data-group="K">Groep K</button>
+    <button class="group-tab" data-group="L">Groep L</button>
+  </div>
+
+  <!-- Countdown -->
+  <div class="countdown-bar" id="countdown-bar">
+    <div>
+      <div class="countdown-label">Deadline voor voorspellingen</div>
+      <div class="countdown-value" id="countdown-value">--:--:--</div>
+    </div>
+    <span class="lock-badge" id="lock-badge" style="display:none">Vergrendeld</span>
+  </div>
+
+  <!-- Matches -->
+  <div class="matches-grid" id="matches-grid">
+    <div class="loading">Laden...</div>
+  </div>
+</div>
+
+<!-- Change password modal -->
+<div class="modal-overlay" id="pw-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closePwModal()">✕</button>
+    <h3>Wachtwoord Wijzigen</h3>
+    <div class="form-group">
+      <label>Huidig wachtwoord</label>
+      <input type="password" id="pw-current" placeholder="••••••">
+    </div>
+    <div class="form-group">
+      <label>Nieuw wachtwoord</label>
+      <input type="password" id="pw-new" placeholder="••••••">
+    </div>
+    <button class="btn-primary" onclick="changePassword()">Opslaan</button>
+    <div id="pw-error" class="error-msg"></div>
+  </div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

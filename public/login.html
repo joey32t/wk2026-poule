@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inloggen — WK 2026 Poule</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="logo-icon">⚽</span>
+      <h1>WK 2026 POULE</h1>
+      <p>Familie Voorspellingen</p>
+    </div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="username">Gebruikersnaam</label>
+        <input type="text" id="username" autocomplete="username" autofocus placeholder="Jouw naam">
+      </div>
+      <div class="form-group">
+        <label for="password">Wachtwoord</label>
+        <input type="password" id="password" autocomplete="current-password" placeholder="••••••">
+      </div>
+      <button type="submit" class="btn-primary">Inloggen</button>
+      <div id="error-msg" class="error-msg"></div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+  // Redirect if already logged in
+  if (AUTH.getToken()) window.location.href = '/';
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const errEl = document.getElementById('error-msg');
+    errEl.classList.remove('show');
+
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Inloggen mislukt';
+      errEl.classList.add('show');
+      return;
+    }
+
+    AUTH.save(data.token, data.username, data.is_admin);
+    window.location.href = '/';
+  });
+</script>
+</body>
+</html>

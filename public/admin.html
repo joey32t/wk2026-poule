@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — WK 2026 Poule</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">⚽</span>
+      <h1>WK 2026 POULE<span>Admin</span></h1>
+    </div>
+    <nav>
+      <a href="/" class="nav-link">Voorspellingen</a>
+      <a href="/leaderboard.html" class="nav-link">Klassement</a>
+      <a href="/rules.html" class="nav-link">Regels</a>
+      <a href="/admin.html" class="nav-link active">Admin</a>
+      <span id="user-chip" class="user-chip"></span>
+      <button class="btn-logout" onclick="logout()">Uitloggen</button>
+    </nav>
+  </div>
+</header>
+
+<div class="page">
+  <div class="page-title">Beheer</div>
+  <div class="admin-grid">
+
+    <!-- Enter Result -->
+    <div class="admin-card">
+      <h2>Uitslag Invoeren</h2>
+      <div class="form-group">
+        <label>Selecteer wedstrijd</label>
+        <select id="result-match-select" class="admin-select" onchange="onMatchSelect()">
+          <option value="">— Kies een wedstrijd —</option>
+        </select>
+      </div>
+      <div id="result-teams" style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.75rem;min-height:1.2em"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Thuis</label>
+          <input type="number" id="result-home" class="admin-input score-input" min="0" max="99" placeholder="0">
+        </div>
+        <div class="form-group" style="flex:0;display:flex;align-items:flex-end;padding-bottom:0.5rem">
+          <span style="font-size:1.2rem;font-weight:700;color:var(--text-muted)">–</span>
+        </div>
+        <div class="form-group">
+          <label>Uit</label>
+          <input type="number" id="result-away" class="admin-input score-input" min="0" max="99" placeholder="0">
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn-admin" onclick="saveResult()">Opslaan</button>
+        </div>
+      </div>
+      <div id="result-success" class="success-msg"></div>
+      <div id="result-error" class="error-msg"></div>
+    </div>
+
+    <!-- Update Knockout Teams -->
+    <div class="admin-card">
+      <h2>Teamnamen Bijwerken</h2>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem">Vul de echte teamnamen in voor knock-outwedstrijden zodra die bekend zijn.</p>
+      <div class="form-group">
+        <label>Selecteer wedstrijd</label>
+        <select id="team-match-select" class="admin-select" onchange="onTeamMatchSelect()">
+          <option value="">— Kies een wedstrijd —</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Thuisteam</label>
+          <input type="text" id="team-home" class="admin-input" placeholder="Teamnaam">
+        </div>
+        <div class="form-group">
+          <label>Uitteam</label>
+          <input type="text" id="team-away" class="admin-input" placeholder="Teamnaam">
+        </div>
+      </div>
+      <button class="btn-admin" onclick="saveTeams()">Bijwerken</button>
+      <div id="team-success" class="success-msg"></div>
+      <div id="team-error" class="error-msg"></div>
+    </div>
+
+    <!-- Add User -->
+    <div class="admin-card">
+      <h2>Deelnemer Toevoegen</h2>
+      <div class="form-group">
+        <label>Gebruikersnaam</label>
+        <input type="text" id="new-username" class="admin-input" placeholder="Naam">
+      </div>
+      <div class="form-group">
+        <label>Tijdelijk wachtwoord</label>
+        <input type="text" id="new-password" class="admin-input" placeholder="Minimaal 4 tekens">
+      </div>
+      <button class="btn-admin" onclick="addUser()">Toevoegen</button>
+      <div id="user-success" class="success-msg"></div>
+      <div id="user-error" class="error-msg"></div>
+    </div>
+
+    <!-- User List -->
+    <div class="admin-card">
+      <h2>Deelnemers</h2>
+      <ul class="users-list" id="users-list">
+        <li style="color:var(--text-muted);font-size:0.85rem">Laden...</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

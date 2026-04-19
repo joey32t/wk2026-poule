@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regels — WK 2026 Poule</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">⚽</span>
+      <h1>WK 2026 POULE<span>Familie Voorspellingen</span></h1>
+    </div>
+    <nav>
+      <a href="/" class="nav-link">Voorspellingen</a>
+      <a href="/leaderboard.html" class="nav-link">Klassement</a>
+      <a href="/rules.html" class="nav-link active">Regels</a>
+      <a href="/admin.html" id="admin-nav-link" class="nav-link" style="display:none">Admin</a>
+      <span id="user-chip" class="user-chip"></span>
+      <button class="btn-logout" onclick="logout()">Uitloggen</button>
+    </nav>
+  </div>
+</header>
+
+<div class="page">
+  <div class="page-title">Spelregels & Puntensysteem</div>
+
+  <div class="rules-section">
+    <h2>Hoe werkt het?</h2>
+    <p>Elke deelnemer vult voor iedere ronde zijn of haar voorspellingen in. Je geeft per wedstrijd een eindstand op (bijv. 2–1). Na het verstrijken van de deadline voor die ronde kunnen voorspellingen <strong>niet meer worden gewijzigd</strong>.</p>
+    <ul>
+      <li>Log in met jouw gebruikersnaam en wachtwoord.</li>
+      <li>Navigeer naar de gewenste ronde via de tabbladen.</li>
+      <li>Vul jouw voorspelling in en klik op <strong>Opslaan</strong>.</li>
+      <li>Na het invullen van de uitslag door de admin kleurt jouw voorspelling groen, oranje of rood.</li>
+    </ul>
+  </div>
+
+  <div class="rules-section">
+    <h2>Kleurcodering</h2>
+    <p>Zodra de echte uitslag is ingevoerd, kleurt elke voorspelling:</p>
+    <ul>
+      <li style="margin:0.4rem 0"><span style="color:var(--green);font-weight:700">Groen</span> — Exacte uitslag correct (bijv. 2–1 voorspeld, 2–1 gespeeld)</li>
+      <li style="margin:0.4rem 0"><span style="color:var(--orange-hl);font-weight:700">Oranje</span> — Winnaar/gelijkspel correct, maar niet de exacte score</li>
+      <li style="margin:0.4rem 0"><span style="color:var(--red);font-weight:700">Rood</span> — Winnaar fout voorspeld</li>
+    </ul>
+  </div>
+
+  <div class="rules-section">
+    <h2>Puntensysteem</h2>
+    <table class="points-table">
+      <thead>
+        <tr>
+          <th>Ronde</th>
+          <th>Winnaar/gelijkspel correct</th>
+          <th>Exacte score correct</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Groepsfase</td>         <td class="pt-win">1 punt</td>  <td class="pt-exact">2 punten</td></tr>
+        <tr><td>Ronde van 32</td>       <td class="pt-win">2 punten</td><td class="pt-exact">3 punten</td></tr>
+        <tr><td>Ronde van 16</td>       <td class="pt-win">3 punten</td><td class="pt-exact">4 punten</td></tr>
+        <tr><td>Kwartfinale</td>        <td class="pt-win">4 punten</td><td class="pt-exact">5 punten</td></tr>
+        <tr><td>Halve Finale</td>       <td class="pt-win">5 punten</td><td class="pt-exact">7 punten</td></tr>
+        <tr><td>3e Plaatswedstrijd</td> <td class="pt-win">5 punten</td><td class="pt-exact">7 punten</td></tr>
+        <tr><td>Finale</td>             <td class="pt-win">10 punten</td><td class="pt-exact">15 punten</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:0.75rem;font-size:0.82rem">Let op: punten voor de exacte score tellen alleen als de volledige eindstand na 90 minuten (en eventueel verlengingen) correct is. Bij een gelijkspel telt het voorspellen van een gelijkspel als een correcte winnaar.</p>
+  </div>
+
+  <div class="rules-section">
+    <h2>Deadlines</h2>
+    <p style="margin-bottom:0.75rem">Voorspellingen moeten <strong>1 uur voor de eerste wedstrijd van elke ronde</strong> zijn ingevuld. Na de deadline zijn wijzigingen niet meer mogelijk.</p>
+    <ul class="deadline-list">
+      <li><span class="deadline-stage">Groepsfase</span>    <span class="deadline-time">11 jun 2026 · 20:00 CEST</span></li>
+      <li><span class="deadline-stage">Ronde van 32</span>  <span class="deadline-time">28 jun 2026 · 20:00 CEST</span></li>
+      <li><span class="deadline-stage">Ronde van 16</span>  <span class="deadline-time">4 jul 2026 · 18:00 CEST</span></li>
+      <li><span class="deadline-stage">Kwartfinale</span>   <span class="deadline-time">9 jul 2026 · 21:00 CEST</span></li>
+      <li><span class="deadline-stage">Halve Finale</span>  <span class="deadline-time">14 jul 2026 · 20:00 CEST</span></li>
+      <li><span class="deadline-stage">3e Plaatswedstrijd</span><span class="deadline-time">18 jul 2026 · 22:00 CEST</span></li>
+      <li><span class="deadline-stage">Finale</span>        <span class="deadline-time">19 jul 2026 · 20:00 CEST</span></li>
+    </ul>
+  </div>
+
+  <div class="rules-section">
+    <h2>Nieuwe deelnemers</h2>
+    <p>Wil je iemand toevoegen aan de poule? Vraag aan <strong>Joey</strong> om een account aan te maken via het adminpaneel. Nieuwe deelnemers kunnen alleen meedoen als zij hun voorspellingen hebben ingevuld vóór de deadline van de lopende ronde.</p>
+  </div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+  if (!AUTH.requireLogin()) throw new Error('not logged in');
+  renderHeaderUser();
+</script>
+</body>
+</html>

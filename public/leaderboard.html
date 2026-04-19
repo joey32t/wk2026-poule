@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klassement — WK 2026 Poule</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">⚽</span>
+      <h1>WK 2026 POULE<span>Familie Voorspellingen</span></h1>
+    </div>
+    <nav>
+      <a href="/" class="nav-link">Voorspellingen</a>
+      <a href="/leaderboard.html" class="nav-link active">Klassement</a>
+      <a href="/rules.html" class="nav-link">Regels</a>
+      <a href="/admin.html" id="admin-nav-link" class="nav-link" style="display:none">Admin</a>
+      <span id="user-chip" class="user-chip"></span>
+      <button class="btn-logout" onclick="logout()">Uitloggen</button>
+    </nav>
+  </div>
+</header>
+
+<div class="page">
+  <div class="page-title">Klassement</div>
+  <div id="leaderboard-container">
+    <div class="loading">Laden...</div>
+  </div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script src="/js/leaderboard.js"></script>
+</body>
+</html>
