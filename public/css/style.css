@@ -798,12 +798,116 @@ nav { display: flex; gap: 0.5rem; align-items: center; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #3a3f5c; }
 
+/* ─── Hamburger & Mobile Nav ─────────────────────────────────────────────────── */
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  line-height: 1;
+  margin-left: auto;
+}
+
+.mobile-nav {
+  display: none;
+  flex-direction: column;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 0.5rem 0;
+  position: absolute;
+  top: 56px;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.mobile-nav.open { display: flex; }
+
+.mobile-nav-link {
+  display: block;
+  padding: 0.75rem 1.25rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--border);
+  transition: color 0.15s, background 0.15s;
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link.active {
+  color: var(--text);
+  background: var(--bg);
+}
+
+.mobile-nav-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+}
+
+/* ─── Admin extras ────────────────────────────────────────────────────────────── */
+.btn-danger {
+  background: #c0392b;
+}
+.btn-danger:hover { background: #a93226; }
+
+.admin-card-wide {
+  grid-column: 1 / -1;
+}
+
+.pred-overview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.pred-overview-table th,
+.pred-overview-table td {
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.5rem;
+  text-align: center;
+  white-space: nowrap;
+}
+.pred-overview-table th {
+  background: var(--bg);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.pred-overview-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+/* ─── Match result extra (ET / penalties) ────────────────────────────────────── */
+.result-extra {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 0.1rem;
+}
+
+/* ─── Prize info ─────────────────────────────────────────────────────────────── */
+.prize-info {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-top: 1.5rem;
+  padding: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
+  header { position: relative; }
   .header-inner { height: 56px; }
   .logo h1 { font-size: 1.3rem; }
   .page { padding: 1rem; }
   .matches-grid { grid-template-columns: 1fr; }
   nav .nav-link { display: none; }
+  nav .btn-logout { display: none; }
+  nav .user-chip { display: none; }
+  .hamburger-btn { display: block; }
   .admin-grid { grid-template-columns: 1fr; }
+  .admin-card-wide { grid-column: 1; }
 }

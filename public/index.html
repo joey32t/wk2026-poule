@@ -22,6 +22,17 @@
       <span id="user-chip" class="user-chip"></span>
       <button class="btn-logout" onclick="logout()">Uitloggen</button>
     </nav>
+    <button class="hamburger-btn" onclick="toggleMobileNav()">&#9776;</button>
+  </div>
+  <div class="mobile-nav" id="mobile-nav">
+    <a href="/" class="mobile-nav-link active">Voorspellingen</a>
+    <a href="/leaderboard.html" class="mobile-nav-link">Klassement</a>
+    <a href="/rules.html" class="mobile-nav-link">Regels</a>
+    <a href="/admin.html" id="mobile-admin-link" class="mobile-nav-link" style="display:none">Admin</a>
+    <div class="mobile-nav-footer">
+      <span id="mobile-user-chip" class="user-chip"></span>
+      <button class="btn-logout" onclick="logout()">Uitloggen</button>
+    </div>
   </div>
 </header>
 

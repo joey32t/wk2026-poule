@@ -39,7 +39,28 @@ function renderHeaderUser() {
 
   const adminLink = document.getElementById('admin-nav-link');
   if (adminLink) adminLink.style.display = user.is_admin ? '' : 'none';
+
+  // Mobile nav: show admin link and set username
+  const mobileAdmin = document.getElementById('mobile-admin-link');
+  if (mobileAdmin) mobileAdmin.style.display = user.is_admin ? '' : 'none';
+
+  const mobileUser = document.getElementById('mobile-user-chip');
+  if (mobileUser) mobileUser.textContent = user.username.toUpperCase();
 }
+
+function toggleMobileNav() {
+  const nav = document.getElementById('mobile-nav');
+  if (nav) nav.classList.toggle('open');
+}
+
+// Close mobile nav when clicking outside
+document.addEventListener('click', e => {
+  const nav = document.getElementById('mobile-nav');
+  const btn = document.querySelector('.hamburger-btn');
+  if (nav && nav.classList.contains('open') && !nav.contains(e.target) && e.target !== btn) {
+    nav.classList.remove('open');
+  }
+});
 
 function logout() {
   AUTH.clear();

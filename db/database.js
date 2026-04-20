@@ -42,4 +42,9 @@ db.exec(`
   );
 `);
 
+// Add ET and penalty columns if they don't exist yet (safe to run on existing DB)
+['et_home', 'et_away', 'pen_home', 'pen_away'].forEach(col => {
+  try { db.exec(`ALTER TABLE matches ADD COLUMN ${col} INTEGER`); } catch {}
+});
+
 module.exports = db;

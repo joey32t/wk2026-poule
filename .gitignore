@@ -1,3 +1,5 @@
 node_modules/
 .env
 db/wc2026.db
+db/*.db-shm
+db/*.db-wal

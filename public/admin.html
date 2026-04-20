@@ -22,6 +22,17 @@
       <span id="user-chip" class="user-chip"></span>
       <button class="btn-logout" onclick="logout()">Uitloggen</button>
     </nav>
+    <button class="hamburger-btn" onclick="toggleMobileNav()">&#9776;</button>
+  </div>
+  <div class="mobile-nav" id="mobile-nav">
+    <a href="/" class="mobile-nav-link">Voorspellingen</a>
+    <a href="/leaderboard.html" class="mobile-nav-link">Klassement</a>
+    <a href="/rules.html" class="mobile-nav-link">Regels</a>
+    <a href="/admin.html" id="mobile-admin-link" class="mobile-nav-link active" style="display:none">Admin</a>
+    <div class="mobile-nav-footer">
+      <span id="mobile-user-chip" class="user-chip"></span>
+      <button class="btn-logout" onclick="logout()">Uitloggen</button>
+    </div>
   </div>
 </header>
 
@@ -41,19 +52,53 @@
       <div id="result-teams" style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.75rem;min-height:1.2em"></div>
       <div class="form-row">
         <div class="form-group">
-          <label>Thuis</label>
+          <label>Thuis (90 min)</label>
           <input type="number" id="result-home" class="admin-input score-input" min="0" max="99" placeholder="0">
         </div>
         <div class="form-group" style="flex:0;display:flex;align-items:flex-end;padding-bottom:0.5rem">
           <span style="font-size:1.2rem;font-weight:700;color:var(--text-muted)">–</span>
         </div>
         <div class="form-group">
-          <label>Uit</label>
+          <label>Uit (90 min)</label>
           <input type="number" id="result-away" class="admin-input score-input" min="0" max="99" placeholder="0">
         </div>
-        <div style="display:flex;align-items:flex-end">
-          <button class="btn-admin" onclick="saveResult()">Opslaan</button>
+      </div>
+
+      <!-- ET and penalty fields — only shown for knockout matches -->
+      <div id="et-section" style="display:none">
+        <div style="font-size:0.8rem;color:var(--text-muted);margin:0.5rem 0 0.25rem">Verlenging (na 120 min) — leeglaten als niet gespeeld</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Thuis (v.v.)</label>
+            <input type="number" id="result-et-home" class="admin-input score-input" min="0" max="99" placeholder="–">
+          </div>
+          <div class="form-group" style="flex:0;display:flex;align-items:flex-end;padding-bottom:0.5rem">
+            <span style="font-size:1.2rem;font-weight:700;color:var(--text-muted)">–</span>
+          </div>
+          <div class="form-group">
+            <label>Uit (v.v.)</label>
+            <input type="number" id="result-et-away" class="admin-input score-input" min="0" max="99" placeholder="–">
+          </div>
         </div>
+        <div style="font-size:0.8rem;color:var(--text-muted);margin:0.5rem 0 0.25rem">Strafschoppen — leeglaten als niet gespeeld</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Thuis (pen.)</label>
+            <input type="number" id="result-pen-home" class="admin-input score-input" min="0" max="99" placeholder="–">
+          </div>
+          <div class="form-group" style="flex:0;display:flex;align-items:flex-end;padding-bottom:0.5rem">
+            <span style="font-size:1.2rem;font-weight:700;color:var(--text-muted)">–</span>
+          </div>
+          <div class="form-group">
+            <label>Uit (pen.)</label>
+            <input type="number" id="result-pen-away" class="admin-input score-input" min="0" max="99" placeholder="–">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.6rem;margin-top:0.5rem">
+        <button class="btn-admin" onclick="saveResult()">Opslaan</button>
+        <button class="btn-admin btn-danger" onclick="clearResult()">Uitslag wissen</button>
       </div>
       <div id="result-success" class="success-msg"></div>
       <div id="result-error" class="error-msg"></div>
@@ -106,6 +151,47 @@
       <ul class="users-list" id="users-list">
         <li style="color:var(--text-muted);font-size:0.85rem">Laden...</li>
       </ul>
+    </div>
+
+    <!-- Clear Predictions -->
+    <div class="admin-card">
+      <h2>Voorspellingen Wissen</h2>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem">Verwijder alle voorspellingen voor een ronde. Niet ongedaan te maken!</p>
+      <div class="form-group">
+        <label>Ronde</label>
+        <select id="clear-pred-stage" class="admin-select">
+          <option value="group">Groepsfase</option>
+          <option value="r32">Ronde van 32</option>
+          <option value="r16">Ronde van 16</option>
+          <option value="qf">Kwartfinale</option>
+          <option value="sf">Halve Finale</option>
+          <option value="3rd">3e Plaats</option>
+          <option value="final">Finale</option>
+          <option value="all">— Alles —</option>
+        </select>
+      </div>
+      <button class="btn-admin btn-danger" onclick="clearPredictions()">Voorspellingen wissen</button>
+      <div id="clear-pred-success" class="success-msg"></div>
+      <div id="clear-pred-error" class="error-msg"></div>
+    </div>
+
+    <!-- View All Predictions -->
+    <div class="admin-card admin-card-wide">
+      <h2>Alle Voorspellingen Bekijken</h2>
+      <div class="form-group">
+        <label>Ronde</label>
+        <select id="view-pred-stage" class="admin-select" onchange="loadAdminPredictions()">
+          <option value="">— Kies een ronde —</option>
+          <option value="group">Groepsfase</option>
+          <option value="r32">Ronde van 32</option>
+          <option value="r16">Ronde van 16</option>
+          <option value="qf">Kwartfinale</option>
+          <option value="sf">Halve Finale</option>
+          <option value="3rd">3e Plaats</option>
+          <option value="final">Finale</option>
+        </select>
+      </div>
+      <div id="admin-pred-table" style="overflow-x:auto;margin-top:0.5rem"></div>
     </div>
 
   </div>

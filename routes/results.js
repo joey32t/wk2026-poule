@@ -4,9 +4,9 @@ const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// POST /api/admin/results  – enter or update a match result
+// POST /api/admin/results  – enter or update a match result (+ optional ET/pen)
 router.post('/results', requireAdmin, (req, res) => {
-  const { match_id, result_home, result_away } = req.body;
+  const { match_id, result_home, result_away, et_home, et_away, pen_home, pen_away } = req.body;
 
   if (match_id == null || result_home == null || result_away == null)
     return res.status(400).json({ error: 'match_id, result_home en result_away zijn verplicht' });
@@ -16,17 +16,22 @@ router.post('/results', requireAdmin, (req, res) => {
   const match = db.prepare('SELECT id FROM matches WHERE id = ?').get(match_id);
   if (!match) return res.status(404).json({ error: 'Wedstrijd niet gevonden' });
 
+  const etH  = (et_home  != null && et_home  !== '') ? parseInt(et_home)  : null;
+  const etA  = (et_away  != null && et_away  !== '') ? parseInt(et_away)  : null;
+  const penH = (pen_home != null && pen_home !== '') ? parseInt(pen_home) : null;
+  const penA = (pen_away != null && pen_away !== '') ? parseInt(pen_away) : null;
+
   db.prepare(
-    'UPDATE matches SET result_home = ?, result_away = ? WHERE id = ?'
-  ).run(result_home, result_away, match_id);
+    'UPDATE matches SET result_home=?, result_away=?, et_home=?, et_away=?, pen_home=?, pen_away=? WHERE id=?'
+  ).run(result_home, result_away, etH, etA, penH, penA, match_id);
 
   res.json({ message: 'Resultaat opgeslagen' });
 });
 
-// DELETE /api/admin/results/:match_id – clear a result
+// DELETE /api/admin/results/:match_id – clear a result (including ET/pen)
 router.delete('/results/:match_id', requireAdmin, (req, res) => {
   db.prepare(
-    'UPDATE matches SET result_home = NULL, result_away = NULL WHERE id = ?'
+    'UPDATE matches SET result_home=NULL, result_away=NULL, et_home=NULL, et_away=NULL, pen_home=NULL, pen_away=NULL WHERE id=?'
   ).run(req.params.match_id);
   res.json({ message: 'Resultaat verwijderd' });
 });

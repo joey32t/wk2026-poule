@@ -39,6 +39,8 @@ function renderLeaderboard(entries) {
     `;
   }).join('');
 
+  const prize = entries.length * 10;
+
   container.innerHTML = `
     <table class="leaderboard-table">
       <thead>
@@ -51,6 +53,7 @@ function renderLeaderboard(entries) {
       </thead>
       <tbody>${rows}</tbody>
     </table>
+    <div class="prize-info">Prijzenpot: €${prize}</div>
   `;
 }
 

@@ -13,6 +13,8 @@ const STAGE_LABELS = {
   qf: 'Kwartfinale', sf: 'Halve Finale', '3rd': '3e Plaats', final: 'Finale'
 };
 
+const KNOCKOUT_STAGES = new Set(['r32', 'r16', 'qf', 'sf', '3rd', 'final']);
+
 let allMatches = [];
 
 async function init() {
@@ -43,14 +45,32 @@ function onMatchSelect() {
   const id = parseInt(document.getElementById('result-match-select').value);
   const match = allMatches.find(m => m.id === id);
   const teamsEl = document.getElementById('result-teams');
+  const etSection = document.getElementById('et-section');
+
   if (match) {
     let info = `${match.home_team} vs ${match.away_team}`;
-    if (match.result_home !== null) info += ` · Huidige uitslag: ${match.result_home}–${match.result_away}`;
+    if (match.result_home !== null) {
+      info += ` · Uitslag: ${match.result_home}–${match.result_away}`;
+      if (match.et_home !== null) info += ` (v.v. ${match.et_home}–${match.et_away})`;
+      if (match.pen_home !== null) info += ` (pen. ${match.pen_home}–${match.pen_away})`;
+    }
     teamsEl.textContent = info;
     document.getElementById('result-home').value = match.result_home ?? '';
     document.getElementById('result-away').value = match.result_away ?? '';
+
+    // Show ET/pen fields only for knockout matches
+    if (KNOCKOUT_STAGES.has(match.stage)) {
+      etSection.style.display = '';
+      document.getElementById('result-et-home').value = match.et_home ?? '';
+      document.getElementById('result-et-away').value = match.et_away ?? '';
+      document.getElementById('result-pen-home').value = match.pen_home ?? '';
+      document.getElementById('result-pen-away').value = match.pen_away ?? '';
+    } else {
+      etSection.style.display = 'none';
+    }
   } else {
     teamsEl.textContent = '';
+    etSection.style.display = 'none';
   }
 }
 
@@ -69,10 +89,25 @@ async function saveResult() {
     return;
   }
 
+  const match = allMatches.find(m => m.id === matchId);
+  const body = { match_id: matchId, result_home: resultHome, result_away: resultAway };
+
+  // Include ET/pen if visible and filled in
+  if (match && KNOCKOUT_STAGES.has(match.stage)) {
+    const etH = document.getElementById('result-et-home').value;
+    const etA = document.getElementById('result-et-away').value;
+    const penH = document.getElementById('result-pen-home').value;
+    const penA = document.getElementById('result-pen-away').value;
+    body.et_home  = etH  !== '' ? parseInt(etH)  : null;
+    body.et_away  = etA  !== '' ? parseInt(etA)  : null;
+    body.pen_home = penH !== '' ? parseInt(penH) : null;
+    body.pen_away = penA !== '' ? parseInt(penA) : null;
+  }
+
   const res = await fetch('/api/admin/results', {
     method: 'POST',
     headers: AUTH.headers(),
-    body: JSON.stringify({ match_id: matchId, result_home: resultHome, result_away: resultAway })
+    body: JSON.stringify(body)
   });
   const data = await res.json();
 
@@ -84,7 +119,45 @@ async function saveResult() {
     successEl.classList.add('show');
     // Update local cache
     const idx = allMatches.findIndex(m => m.id === matchId);
-    if (idx >= 0) { allMatches[idx].result_home = resultHome; allMatches[idx].result_away = resultAway; }
+    if (idx >= 0) {
+      Object.assign(allMatches[idx], {
+        result_home: resultHome, result_away: resultAway,
+        et_home: body.et_home ?? null, et_away: body.et_away ?? null,
+        pen_home: body.pen_home ?? null, pen_away: body.pen_away ?? null,
+      });
+    }
+    onMatchSelect();
+  }
+}
+
+async function clearResult() {
+  const matchId = parseInt(document.getElementById('result-match-select').value);
+  if (!matchId) return;
+  if (!confirm('Uitslag wissen voor deze wedstrijd?')) return;
+
+  const successEl = document.getElementById('result-success');
+  const errorEl   = document.getElementById('result-error');
+  successEl.classList.remove('show');
+  errorEl.classList.remove('show');
+
+  const res = await fetch(`/api/admin/results/${matchId}`, {
+    method: 'DELETE',
+    headers: AUTH.headers()
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    errorEl.textContent = data.error;
+    errorEl.classList.add('show');
+  } else {
+    successEl.textContent = 'Uitslag gewist.';
+    successEl.classList.add('show');
+    const idx = allMatches.findIndex(m => m.id === matchId);
+    if (idx >= 0) {
+      allMatches[idx].result_home = null; allMatches[idx].result_away = null;
+      allMatches[idx].et_home = null; allMatches[idx].et_away = null;
+      allMatches[idx].pen_home = null; allMatches[idx].pen_away = null;
+    }
     onMatchSelect();
   }
 }
@@ -129,7 +202,6 @@ async function saveTeams() {
     successEl.classList.add('show');
     const idx = allMatches.findIndex(m => m.id === matchId);
     if (idx >= 0) { allMatches[idx].home_team = homeTeam; allMatches[idx].away_team = awayTeam; }
-    // Re-populate dropdowns
     document.getElementById('result-match-select').innerHTML = '<option value="">— Kies een wedstrijd —</option>';
     document.getElementById('team-match-select').innerHTML = '<option value="">— Kies een wedstrijd —</option>';
     populateMatchSelects();
@@ -191,6 +263,82 @@ async function resetPassword(userId, username) {
   });
   const data = await res.json();
   alert(res.ok ? `Wachtwoord van ${username} gereset.` : data.error);
+}
+
+// ─── Clear Predictions ────────────────────────────────────────────────────────
+async function clearPredictions() {
+  const stage = document.getElementById('clear-pred-stage').value;
+  const label = stage === 'all' ? 'ALLE' : document.getElementById('clear-pred-stage').selectedOptions[0].text;
+  if (!confirm(`Weet je zeker dat je alle voorspellingen voor "${label}" wilt wissen? Dit kan niet ongedaan worden gemaakt.`)) return;
+
+  const successEl = document.getElementById('clear-pred-success');
+  const errorEl   = document.getElementById('clear-pred-error');
+  successEl.classList.remove('show');
+  errorEl.classList.remove('show');
+
+  const res = await fetch(`/api/predictions?stage=${stage}`, {
+    method: 'DELETE',
+    headers: AUTH.headers()
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    errorEl.textContent = data.error;
+    errorEl.classList.add('show');
+  } else {
+    successEl.textContent = `Voorspellingen voor "${label}" gewist.`;
+    successEl.classList.add('show');
+  }
+}
+
+// ─── View All Predictions ─────────────────────────────────────────────────────
+async function loadAdminPredictions() {
+  const stage = document.getElementById('view-pred-stage').value;
+  const container = document.getElementById('admin-pred-table');
+  if (!stage) { container.innerHTML = ''; return; }
+
+  container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">Laden...</div>';
+
+  let url = `/api/matches?stage=${stage}`;
+  const matchRes = await fetch(url);
+  const matches = await matchRes.json();
+
+  if (!matches.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">Geen wedstrijden gevonden.</div>';
+    return;
+  }
+
+  // Fetch predictions for all matches
+  const predResults = await Promise.all(
+    matches.map(m => fetch(`/api/predictions?match_id=${m.id}`).then(r => r.json()))
+  );
+
+  // Collect all unique usernames
+  const allUsers = [...new Set(predResults.flat().map(p => p.username))].sort();
+
+  if (!allUsers.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">Nog geen voorspellingen.</div>';
+    return;
+  }
+
+  // Build lookup: match_id -> username -> prediction
+  const predMap = {};
+  matches.forEach((m, i) => {
+    predMap[m.id] = {};
+    predResults[i].forEach(p => { predMap[m.id][p.username] = p; });
+  });
+
+  const header = `<tr><th>Wedstrijd</th>${allUsers.map(u => `<th>${u}</th>`).join('')}</tr>`;
+  const rows = matches.map(m => {
+    const cells = allUsers.map(u => {
+      const p = predMap[m.id][u];
+      return `<td>${p ? `${p.pred_home}–${p.pred_away}` : '<span style="color:var(--text-muted)">—</span>'}</td>`;
+    }).join('');
+    const result = m.result_home !== null ? ` <span style="color:var(--orange-hl)">${m.result_home}–${m.result_away}</span>` : '';
+    return `<tr><td style="white-space:nowrap;font-size:0.78rem">${m.home_team} vs ${m.away_team}${result}</td>${cells}</tr>`;
+  }).join('');
+
+  container.innerHTML = `<table class="pred-overview-table"><thead>${header}</thead><tbody>${rows}</tbody></table>`;
 }
 
 init();

@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db/database');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -79,6 +79,21 @@ router.post('/predictions', requireAuth, (req, res) => {
 // GET /api/deadlines – return all stage deadlines for frontend countdown
 router.get('/deadlines', (_req, res) => {
   res.json(STAGE_DEADLINES);
+});
+
+// DELETE /api/predictions?stage=all|group|r32|... OR ?match_id=X  (admin only)
+router.delete('/predictions', requireAdmin, (req, res) => {
+  const { stage, match_id } = req.query;
+  if (match_id) {
+    db.prepare('DELETE FROM predictions WHERE match_id = ?').run(match_id);
+  } else if (stage === 'all') {
+    db.prepare('DELETE FROM predictions').run();
+  } else if (stage) {
+    db.prepare('DELETE FROM predictions WHERE match_id IN (SELECT id FROM matches WHERE stage = ?)').run(stage);
+  } else {
+    return res.status(400).json({ error: 'stage of match_id vereist' });
+  }
+  res.json({ message: 'Voorspellingen verwijderd' });
 });
 
 module.exports = router;

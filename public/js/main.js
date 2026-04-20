@@ -142,9 +142,20 @@ function renderMatchCard(match) {
   const preds = allPredictions[match.id] || [];
   const currentUser = AUTH.getUser();
 
-  const resultHtml = hasResult
-    ? `<div class="match-result">${match.result_home} – ${match.result_away}</div>`
-    : `<div class="vs-text">VS</div>`;
+  let resultHtml;
+  if (hasResult) {
+    let extra = '';
+    if (match.et_home !== null && match.et_home !== undefined) {
+      extra += ` <span class="result-extra">(v.v. ${match.et_home}–${match.et_away}`;
+      if (match.pen_home !== null && match.pen_home !== undefined) {
+        extra += `, pen. ${match.pen_home}–${match.pen_away}`;
+      }
+      extra += ')</span>';
+    }
+    resultHtml = `<div class="match-result">${match.result_home} – ${match.result_away}${extra}</div>`;
+  } else {
+    resultHtml = `<div class="vs-text">VS</div>`;
+  }
 
   const predsHtml = renderPredictions(match, preds, currentUser, hasResult, isLocked);
 
@@ -190,6 +201,7 @@ function renderPredictions(match, preds, currentUser, hasResult, isLocked) {
   return allUsers.map(username => {
     const pred = predMap[username.toLowerCase()];
     const isMe = username.toLowerCase() === currentUser.username.toLowerCase();
+    const isAdmin = currentUser.is_admin;
     const canEdit = isMe && !isLocked;
 
     let statusClass = '';
@@ -228,7 +240,7 @@ function renderPredictions(match, preds, currentUser, hasResult, isLocked) {
       `;
     } else if (pred) {
       // Show prediction (locked or other user, result not known yet → only show own predictions and locked others)
-      const show = isMe || isLocked;
+      const show = isMe || isLocked || isAdmin;
       const displayStr = show ? `${pred.pred_home} – ${pred.pred_away}` : '?';
       return `
         <div class="${rowClass}">
