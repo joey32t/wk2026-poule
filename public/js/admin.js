@@ -265,32 +265,6 @@ async function resetPassword(userId, username) {
   alert(res.ok ? `Wachtwoord van ${username} gereset.` : data.error);
 }
 
-// ─── Clear Predictions ────────────────────────────────────────────────────────
-async function clearPredictions() {
-  const stage = document.getElementById('clear-pred-stage').value;
-  const label = stage === 'all' ? 'ALLE' : document.getElementById('clear-pred-stage').selectedOptions[0].text;
-  if (!confirm(`Weet je zeker dat je alle voorspellingen voor "${label}" wilt wissen? Dit kan niet ongedaan worden gemaakt.`)) return;
-
-  const successEl = document.getElementById('clear-pred-success');
-  const errorEl   = document.getElementById('clear-pred-error');
-  successEl.classList.remove('show');
-  errorEl.classList.remove('show');
-
-  const res = await fetch(`/api/predictions?stage=${stage}`, {
-    method: 'DELETE',
-    headers: AUTH.headers()
-  });
-  const data = await res.json();
-
-  if (!res.ok) {
-    errorEl.textContent = data.error;
-    errorEl.classList.add('show');
-  } else {
-    successEl.textContent = `Voorspellingen voor "${label}" gewist.`;
-    successEl.classList.add('show');
-  }
-}
-
 // ─── View All Predictions ─────────────────────────────────────────────────────
 async function loadAdminPredictions() {
   const stage = document.getElementById('view-pred-stage').value;
@@ -332,13 +306,33 @@ async function loadAdminPredictions() {
   const rows = matches.map(m => {
     const cells = allUsers.map(u => {
       const p = predMap[m.id][u];
-      return `<td>${p ? `${p.pred_home}–${p.pred_away}` : '<span style="color:var(--text-muted)">—</span>'}</td>`;
+      if (!p) return `<td><span style="color:var(--text-muted)">—</span></td>`;
+      return `<td>
+        <span>${p.pred_home}–${p.pred_away}</span>
+        <button class="pred-del-btn" title="Wissen" onclick="deletePrediction(${p.id}, '${u}', '${m.home_team} vs ${m.away_team}')">✕</button>
+      </td>`;
     }).join('');
     const result = m.result_home !== null ? ` <span style="color:var(--orange-hl)">${m.result_home}–${m.result_away}</span>` : '';
     return `<tr><td style="white-space:nowrap;font-size:0.78rem">${m.home_team} vs ${m.away_team}${result}</td>${cells}</tr>`;
   }).join('');
 
   container.innerHTML = `<table class="pred-overview-table"><thead>${header}</thead><tbody>${rows}</tbody></table>`;
+}
+
+async function deletePrediction(predId, username, matchLabel) {
+  if (!confirm(`Voorspelling van ${username} voor "${matchLabel}" wissen?`)) return;
+
+  const res = await fetch(`/api/predictions/${predId}`, {
+    method: 'DELETE',
+    headers: AUTH.headers()
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.error || 'Wissen mislukt');
+  } else {
+    loadAdminPredictions(); // refresh table
+  }
 }
 
 init();

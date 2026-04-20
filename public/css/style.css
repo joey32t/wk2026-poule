@@ -814,15 +814,15 @@ nav { display: flex; gap: 0.5rem; align-items: center; }
 .mobile-nav {
   display: none;
   flex-direction: column;
-  background: var(--card);
+  background: var(--bg-card);
   border-top: 1px solid var(--border);
   padding: 0.5rem 0;
   position: absolute;
   top: 56px;
   left: 0;
   right: 0;
-  z-index: 100;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  z-index: 200;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7);
 }
 
 .mobile-nav.open { display: flex; }
@@ -878,6 +878,18 @@ nav { display: flex; gap: 0.5rem; align-items: center; }
   font-weight: 600;
 }
 .pred-overview-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+.pred-overview-table td { position: relative; }
+.pred-del-btn {
+  background: none;
+  border: none;
+  color: var(--red);
+  cursor: pointer;
+  font-size: 0.65rem;
+  padding: 0 0.2rem;
+  opacity: 0.5;
+  vertical-align: middle;
+}
+.pred-del-btn:hover { opacity: 1; }
 
 /* ─── Match result extra (ET / penalties) ────────────────────────────────────── */
 .result-extra {

@@ -81,19 +81,11 @@ router.get('/deadlines', (_req, res) => {
   res.json(STAGE_DEADLINES);
 });
 
-// DELETE /api/predictions?stage=all|group|r32|... OR ?match_id=X  (admin only)
-router.delete('/predictions', requireAdmin, (req, res) => {
-  const { stage, match_id } = req.query;
-  if (match_id) {
-    db.prepare('DELETE FROM predictions WHERE match_id = ?').run(match_id);
-  } else if (stage === 'all') {
-    db.prepare('DELETE FROM predictions').run();
-  } else if (stage) {
-    db.prepare('DELETE FROM predictions WHERE match_id IN (SELECT id FROM matches WHERE stage = ?)').run(stage);
-  } else {
-    return res.status(400).json({ error: 'stage of match_id vereist' });
-  }
-  res.json({ message: 'Voorspellingen verwijderd' });
+// DELETE /api/predictions/:id  (admin only) — delete a single prediction by its ID
+router.delete('/predictions/:id', requireAdmin, (req, res) => {
+  const result = db.prepare('DELETE FROM predictions WHERE id = ?').run(req.params.id);
+  if (!result.changes) return res.status(404).json({ error: 'Voorspelling niet gevonden' });
+  res.json({ message: 'Voorspelling verwijderd' });
 });
 
 module.exports = router;
