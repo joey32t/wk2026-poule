@@ -34,8 +34,8 @@ function calcPoints(stage, resultHome, resultAway, predHome, predAway, etHome, e
   if (scPts && etHome !== null && etHome !== undefined && etAway !== null && etAway !== undefined) {
     const etWinner = Math.sign(etHome - etAway);
 
-    if (predWinner === 0 && actualWinner === 0) {
-      // Predicted draw AND 90-min was a draw → gets bonus (match went to ET)
+    if (predWinner === 0 && actualWinner === 0 && etWinner === 0) {
+      // Predicted draw AND still draw after 120 min (went to penalties)
       total += scPts;
     } else if (predWinner !== 0 && etWinner !== 0 && predWinner === etWinner) {
       // Predicted a team win AND that team won in ET → gets bonus
