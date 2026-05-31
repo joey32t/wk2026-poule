@@ -8,29 +8,7 @@ const STAGE_LABELS = {
 };
 const STAGE_ORDER = ['group', 'r32', 'r16', 'qf', 'sf', '3rd', 'final'];
 
-// Team emoji flags
-const FLAGS = {
-  'Mexico':                '🇲🇽', 'South Africa':        '🇿🇦', 'Korea Republic':     '🇰🇷',
-  'Czechia':               '🇨🇿', 'Canada':              '🇨🇦', 'Bosnia & Herzegovina':'🇧🇦',
-  'Qatar':                 '🇶🇦', 'Switzerland':         '🇨🇭', 'Brazil':             '🇧🇷',
-  'Morocco':               '🇲🇦', 'Haiti':               '🇭🇹', 'Scotland':           '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
-  'USA':                   '🇺🇸', 'Paraguay':            '🇵🇾', 'Australia':          '🇦🇺',
-  'Türkiye':               '🇹🇷', 'Germany':             '🇩🇪', 'Curaçao':            '🇨🇼',
-  'Ivory Coast':           '🇨🇮', 'Ecuador':             '🇪🇨', 'Netherlands':        '🇳🇱',
-  'Japan':                 '🇯🇵', 'Sweden':              '🇸🇪', 'Tunisia':            '🇹🇳',
-  'Belgium':               '🇧🇪', 'Egypt':               '🇪🇬', 'Iran':               '🇮🇷',
-  'New Zealand':           '🇳🇿', 'Spain':               '🇪🇸', 'Uruguay':            '🇺🇾',
-  'Saudi Arabia':          '🇸🇦', 'Cape Verde':          '🇨🇻', 'France':             '🇫🇷',
-  'Senegal':               '🇸🇳', 'Norway':              '🇳🇴', 'Iraq':               '🇮🇶',
-  'Argentina':             '🇦🇷', 'Algeria':             '🇩🇿', 'Austria':            '🇦🇹',
-  'Jordan':                '🇯🇴', 'Portugal':            '🇵🇹', 'DR Congo':           '🇨🇩',
-  'Colombia':              '🇨🇴', 'Uzbekistan':          '🇺🇿', 'England':            '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-  'Croatia':               '🇭🇷', 'Panama':              '🇵🇦', 'Ghana':              '🇬🇭',
-};
-
-function getFlag(name) {
-  return FLAGS[name] || '🏳';
-}
+// Country flags are rendered via the shared helper in flags.js (flagImg / flagUrl).
 
 let currentStage = 'group';
 let currentGroup = 'A';
@@ -167,12 +145,12 @@ function renderMatchCard(match) {
       </div>
       <div class="match-teams">
         <div class="team">
-          <span class="team-flag">${getFlag(match.home_team)}</span>
+          ${flagImg(match.home_team)}
           <span class="team-name">${match.home_team}</span>
         </div>
         <div class="vs-block">${resultHtml}</div>
         <div class="team">
-          <span class="team-flag">${getFlag(match.away_team)}</span>
+          ${flagImg(match.away_team)}
           <span class="team-name">${match.away_team}</span>
         </div>
       </div>

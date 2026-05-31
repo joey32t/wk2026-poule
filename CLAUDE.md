@@ -17,26 +17,47 @@ Players: Joey (admin), Annemieke, Mike, Shanna, Dave.
 |------|---------|
 | `server.js` | Express entry, route registration |
 | `db/database.js` | SQLite schema + ALTER TABLE migrations at bottom |
-| `db/seed.js` | Seeds 104 matches + 5 users (runs on Railway start) |
+| `db/schedule.js` | **Canonical 104-match schedule** (single source of truth). Times in Amsterdam; knockout rows carry slot `source` codes |
+| `db/seed.js` | Seeds users + matches from `schedule.js` (only on empty DB) |
+| `db/sync-schedule.js` | Idempotent: updates live DB schedule (kickoff/venue/sources) by match_number, **preserving results + predictions**. Runs on every boot |
+| `db/annexC.js` | FIFA Annex C — all 495 best-third assignment combinations (generated data, do not hand-edit) |
+| `tournament.js` | **Pure progression logic**: group standings (FIFA tiebreakers), third-place ranking, Annex C assignment, knockout cascade |
+| `routes/progression.js` | Bridges `tournament.js` ↔ DB: `recompute()` writes resolved team names; `snapshot()` for the API |
 | `middleware/auth.js` | `requireAuth` / `requireAdmin` JWT middleware |
 | `routes/predictions.js` | STAGE_DEADLINES, save/get predictions, DELETE single pred (admin) |
-| `routes/results.js` | Admin: enter/clear match results incl. ET + penalty fields |
+| `routes/results.js` | Admin: enter/clear results (calls `progression.recompute()`); PUT manual team override (sets `is_manual`); POST `/matches/:id/auto` reverts to auto |
 | `routes/leaderboard.js` | Scoring logic — POINTS map + SECOND_CHANCE map + calcPoints() |
+| `routes/standings.js` | GET `/api/standings` — group tables, third ranking, resolved bracket |
 | `routes/users.js` | Admin: list/add/reset users |
 | `routes/auth.js` | Login, change-password |
 | `public/css/style.css` | Orange (#FF6200) + navy (#003893) dark theme |
 | `public/js/auth.js` | AUTH object, renderHeaderUser(), toggleMobileNav() |
-| `public/js/main.js` | Stage tabs, match cards, predictions rendering, FLAGS map |
+| `public/js/flags.js` | Shared `flagImg()` / `flagUrl()` — local SVG flags (works on Windows desktop) |
+| `public/js/main.js` | Stage tabs, match cards, predictions rendering |
+| `public/js/standings.js` | Stand page: group tables, best-3 ranking, bracket views |
 | `public/js/admin.js` | All admin panel logic |
 | `public/js/leaderboard.js` | Leaderboard render + prize display |
+| `public/flags/*.svg` | 48 bundled country flags (flagcdn, incl. gb-eng/gb-sct) |
+| `test-tournament.js` | `node test-tournament.js` — sanity test for the progression pipeline |
 
 ## Database schema (matches table)
 ```
 id, match_number, stage, group_letter, home_team, away_team, kickoff_cest, venue,
 result_home, result_away,   ← 90-min score
 et_home, et_away,           ← extra time score (nullable)
-pen_home, pen_away          ← penalties score (nullable, display only)
+pen_home, pen_away,         ← penalties score (nullable, display only)
+home_source, away_source,   ← knockout slot definition (1A/2B/3:POOL/W##/L##); NULL for group
+is_manual                   ← 1 if admin overrode team names; auto-progression then skips it
 ```
+
+## Auto-progression
+- Group results → `tournament.js` computes standings (Pts → GD → goals → head-to-head; cards/lots
+  can't be computed, flagged via `tiebreakNote`) → ranks the 12 third-placed teams → best 8 qualify.
+- The 8 qualifying groups form a key into `db/annexC.js` (Annex C) → which group's 3rd fills each
+  R32 "best third" slot. Knockout winners/losers cascade R32 → final by match number.
+- Triggered after every result save/clear. Resolved names are written to `home_team`/`away_team`;
+  cleared results roll a slot back to its placeholder. Manual overrides (`is_manual=1`) are never
+  clobbered — revert them with POST `/api/admin/matches/:id/auto`.
 
 ## Point system
 | Stage | Winner/draw | Exact score | 2nd chance (ET) |
@@ -60,7 +81,8 @@ group: Jun 11 20:00 · r32: Jun 28 20:00 · r16: Jul 4 18:00
 qf: Jul 9 21:00 · sf: Jul 14 20:00 · 3rd: Jul 18 22:00 · final: Jul 19 20:00
 
 ## Railway setup
-- Start command: `node db/seed.js && node server.js`
+- Start command: `node db/seed.js && node db/sync-schedule.js && node server.js`
+  (seed only fills an empty DB; sync-schedule then corrects the schedule on the live DB each boot)
 - Env vars: `JWT_SECRET`, `PORT=3000`, `DB_PATH=/data/wc2026.db`
 - Persistent volume at `/data` holds the live SQLite DB
 

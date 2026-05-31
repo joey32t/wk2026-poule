@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Klassement — WK 2026 Poule</title>
+  <title>Stand — WK 2026 Poule</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -16,8 +16,8 @@
     </div>
     <nav>
       <a href="/" class="nav-link">Voorspellingen</a>
-      <a href="/standings.html" class="nav-link">Stand</a>
-      <a href="/leaderboard.html" class="nav-link active">Klassement</a>
+      <a href="/standings.html" class="nav-link active">Stand</a>
+      <a href="/leaderboard.html" class="nav-link">Klassement</a>
       <a href="/rules.html" class="nav-link">Regels</a>
       <a href="/admin.html" id="admin-nav-link" class="nav-link" style="display:none">Admin</a>
       <span id="user-chip" class="user-chip"></span>
@@ -27,8 +27,8 @@
   </div>
   <div class="mobile-nav" id="mobile-nav">
     <a href="/" class="mobile-nav-link">Voorspellingen</a>
-    <a href="/standings.html" class="mobile-nav-link">Stand</a>
-    <a href="/leaderboard.html" class="mobile-nav-link active">Klassement</a>
+    <a href="/standings.html" class="mobile-nav-link active">Stand</a>
+    <a href="/leaderboard.html" class="mobile-nav-link">Klassement</a>
     <a href="/rules.html" class="mobile-nav-link">Regels</a>
     <a href="/admin.html" id="mobile-admin-link" class="mobile-nav-link" style="display:none">Admin</a>
     <div class="mobile-nav-footer">
@@ -39,13 +39,23 @@
 </header>
 
 <div class="page">
-  <div class="page-title">Klassement</div>
-  <div id="leaderboard-container">
-    <div class="loading">Laden...</div>
+  <div class="page-title">Stand & Schema</div>
+
+  <div class="standings-tabs">
+    <button class="standings-tab active" data-view="groups" onclick="switchView('groups')">Groepen</button>
+    <button class="standings-tab" data-view="thirds" onclick="switchView('thirds')">Beste nr. 3</button>
+    <button class="standings-tab" data-view="bracket" onclick="switchView('bracket')">Schema</button>
   </div>
+
+  <div id="view-groups"></div>
+  <div id="view-thirds" style="display:none"></div>
+  <div id="view-bracket" style="display:none"></div>
+
+  <div id="standings-loading" class="loading">Laden...</div>
 </div>
 
 <script src="/js/auth.js"></script>
-<script src="/js/leaderboard.js"></script>
+<script src="/js/flags.js"></script>
+<script src="/js/standings.js"></script>
 </body>
 </html>

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "seed": "node db/seed.js",
-    "dev": "node db/seed.js && node server.js"
+    "sync": "node db/sync-schedule.js",
+    "dev": "node db/seed.js && node db/sync-schedule.js && node server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

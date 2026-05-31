@@ -47,4 +47,14 @@ db.exec(`
   try { db.exec(`ALTER TABLE matches ADD COLUMN ${col} INTEGER`); } catch {}
 });
 
+// Progression columns (safe to run on existing DB):
+//   home_source / away_source — slot definition for knockout matches (e.g. '1A', '2B',
+//     '3:CEFHI', 'W73', 'L101'); NULL for group matches. Resolved by tournament.js.
+//   is_manual — 1 if an admin manually set this match's team names; auto-progression
+//     then leaves the match untouched.
+['home_source TEXT', 'away_source TEXT'].forEach(def => {
+  try { db.exec(`ALTER TABLE matches ADD COLUMN ${def}`); } catch {}
+});
+try { db.exec('ALTER TABLE matches ADD COLUMN is_manual INTEGER DEFAULT 0'); } catch {}
+
 module.exports = db;

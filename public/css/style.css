@@ -279,7 +279,18 @@ nav { display: flex; gap: 0.5rem; align-items: center; }
   flex: 1;
   text-align: center;
 }
-.team-flag { font-size: 2rem; line-height: 1; }
+.team-flag {
+  display: inline-block;
+  width: 34px;
+  height: 26px;
+  object-fit: cover;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
+  vertical-align: middle;
+}
+.team-flag-tbd {
+  background: repeating-linear-gradient(45deg, #2a2f3a, #2a2f3a 4px, #333a47 4px, #333a47 8px);
+}
 .team-name {
   font-size: 0.82rem;
   font-weight: 700;
@@ -909,6 +920,53 @@ nav { display: flex; gap: 0.5rem; align-items: center; }
   border-top: 1px solid var(--border);
 }
 
+/* ─── Standings page ────────────────────────────────────────────────────────── */
+.standings-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.standings-tab {
+  background: var(--bg-card); color: var(--text-muted);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.5rem 1rem; font-weight: 700; cursor: pointer; font-size: 0.85rem;
+}
+.standings-tab.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+.group-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.group-card-title {
+  font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px;
+  background: var(--navy); color: #fff; padding: 0.5rem 0.85rem; font-size: 1.05rem;
+}
+.st-live, .br-pen { font-size: 0.65rem; color: var(--orange-hl); font-family: system-ui, sans-serif; letter-spacing: 0; }
+
+.group-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.group-table th { color: var(--text-muted); font-weight: 600; font-size: 0.7rem; text-align: center; padding: 0.4rem 0.3rem; }
+.group-table td { text-align: center; padding: 0.4rem 0.3rem; border-top: 1px solid var(--border); }
+.group-table .st-team { text-align: left; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
+.group-table .st-team .team-flag { width: 24px; height: 18px; }
+.st-pos { color: var(--text-muted); width: 1.4rem; }
+.st-pts { font-weight: 800; color: var(--orange-hl); }
+.st-gd { color: var(--text-muted); }
+.st-note, .st-star { color: var(--orange-hl); font-weight: 800; }
+.group-table tr.qual td:first-child { box-shadow: inset 3px 0 0 var(--green); }
+.group-table tr.maybe td:first-child { box-shadow: inset 3px 0 0 var(--orange); }
+.group-table tr.out { opacity: 0.45; }
+.st-badge { color: var(--green); font-weight: 800; }
+
+.st-legend { margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.st-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 0.35rem; vertical-align: middle; }
+.st-legend .dot.qual { background: var(--green); }
+.st-legend .dot.maybe { background: var(--orange); }
+.st-empty { color: var(--text-muted); padding: 1.5rem; text-align: center; }
+
+.br-round { margin-bottom: 1.5rem; }
+.br-round-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: var(--orange); letter-spacing: 0.5px; margin-bottom: 0.6rem; }
+.br-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.75rem; }
+.br-match { position: relative; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.65rem 0.75rem; }
+.br-num { position: absolute; top: 0.4rem; right: 0.6rem; font-size: 0.65rem; color: var(--text-muted); }
+.br-team { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; padding: 0.15rem 0; }
+.br-team .team-flag { width: 24px; height: 18px; }
+.br-team.br-win { color: var(--green); font-weight: 800; }
+.br-score { font-family: 'Bebas Neue', sans-serif; color: var(--text-muted); font-size: 0.95rem; padding: 0.1rem 0 0.1rem 1.9rem; }
+
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   header { position: relative; }
@@ -922,4 +980,6 @@ nav { display: flex; gap: 0.5rem; align-items: center; }
   .hamburger-btn { display: block; }
   .admin-grid { grid-template-columns: 1fr; }
   .admin-card-wide { grid-column: 1; }
+  .group-grid { grid-template-columns: 1fr; }
+  .st-hide { display: none; }
 }
