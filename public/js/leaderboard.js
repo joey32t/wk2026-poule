@@ -7,7 +7,13 @@ const STAGE_LABELS = {
 };
 
 async function loadLeaderboard() {
-  const res = await fetch('/api/leaderboard');
+  await AUTH.initPool();
+  const container = document.getElementById('leaderboard-container');
+  if (AUTH.isNoPool()) {
+    container.innerHTML = '<div class="loading">Je bent nog niet aan een poule toegewezen. Vraag de beheerder om je toe te voegen.</div>';
+    return;
+  }
+  const res = await fetch(`/api/leaderboard?${AUTH.poolQuery()}`, { headers: AUTH.headers() });
   const data = await res.json();
   renderLeaderboard(data);
 }

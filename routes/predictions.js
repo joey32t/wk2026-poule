@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { resolveScope } = require('../db/pools-helpers');
 
 const router = express.Router();
 
@@ -33,18 +34,30 @@ router.get('/matches', (req, res) => {
   res.json(matches);
 });
 
-// GET /api/predictions?match_id=31  – returns all user predictions for a match
-router.get('/predictions', (req, res) => {
+// GET /api/predictions?match_id=31[&pool_id=2] – predictions for a match, scoped to a poule
+router.get('/predictions', requireAuth, (req, res) => {
   const { match_id } = req.query;
   if (!match_id) return res.status(400).json({ error: 'match_id vereist' });
 
-  const preds = db.prepare(`
+  const scope = resolveScope(req);
+  if (!scope.ok) return res.status(scope.status).json({ error: scope.error });
+
+  const select = `
     SELECT p.id, p.user_id, u.username, p.match_id, p.pred_home, p.pred_away, p.updated_at
     FROM predictions p
     JOIN users u ON u.id = p.user_id
-    WHERE p.match_id = ?
-    ORDER BY u.username
-  `).all(match_id);
+    WHERE p.match_id = ?`;
+
+  let preds;
+  if (scope.userIds === null) {
+    preds = db.prepare(`${select} ORDER BY u.username`).all(match_id);
+  } else if (scope.userIds.length === 0) {
+    preds = [];
+  } else {
+    const ph = scope.userIds.map(() => '?').join(',');
+    preds = db.prepare(`${select} AND p.user_id IN (${ph}) ORDER BY u.username`)
+      .all(match_id, ...scope.userIds);
+  }
   res.json(preds);
 });
 

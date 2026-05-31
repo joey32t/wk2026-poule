@@ -18,10 +18,12 @@ const KNOCKOUT_STAGES = new Set(['r32', 'r16', 'qf', 'sf', '3rd', 'final']);
 let allMatches = [];
 
 async function init() {
+  await AUTH.initPool();
   const res = await fetch('/api/matches');
   allMatches = await res.json();
   populateMatchSelects();
   loadUsers();
+  loadPoolsAdmin();
   loadBonusAdmin();
 }
 
@@ -283,9 +285,9 @@ async function loadAdminPredictions() {
     return;
   }
 
-  // Fetch predictions for all matches
+  // Fetch predictions for all matches (scoped to the selected poule via the header switcher)
   const predResults = await Promise.all(
-    matches.map(m => fetch(`/api/predictions?match_id=${m.id}`).then(r => r.json()))
+    matches.map(m => fetch(`/api/predictions?match_id=${m.id}&${AUTH.poolQuery()}`, { headers: AUTH.headers() }).then(r => r.json()))
   );
 
   // Collect all unique usernames
@@ -339,15 +341,25 @@ async function deletePrediction(predId, username, matchLabel) {
 // ─── Bonus Game (Winnaar & Topscorer) ──────────────────────────────────────────
 async function loadBonusAdmin() {
   const container = document.getElementById('bonus-admin-table');
-  const [users, bonus] = await Promise.all([
+  const poolId = AUTH.getPoolId();
+  const [users, bonus, pools] = await Promise.all([
     fetch('/api/admin/users', { headers: AUTH.headers() }).then(r => r.json()),
-    fetch('/api/bonus').then(r => r.json())
+    fetch(`/api/bonus?${AUTH.poolQuery()}`, { headers: AUTH.headers() }).then(r => r.json()),
+    poolId ? fetch('/api/admin/pools', { headers: AUTH.headers() }).then(r => r.json()) : Promise.resolve(null)
   ]);
 
   const byUser = {};
   bonus.forEach(b => { byUser[b.user_id] = b; });
 
-  const rows = users.map(u => {
+  // When a poule is selected, only show its members; otherwise all users.
+  let shownUsers = users;
+  if (poolId && pools) {
+    const p = pools.find(x => String(x.id) === String(poolId));
+    const members = new Set(p ? p.members : []);
+    shownUsers = users.filter(u => members.has(u.id));
+  }
+
+  const rows = shownUsers.map(u => {
     const b = byUser[u.id] || {};
     const champ  = b.champion   ? `${flagImg(b.champion)} ${b.champion}` : '<span style="color:var(--text-muted)">—</span>';
     const scorer = b.top_scorer ? b.top_scorer                          : '<span style="color:var(--text-muted)">—</span>';
@@ -380,6 +392,86 @@ async function awardBonus(userId) {
     const data = await res.json().catch(() => ({}));
     alert(data.error || 'Bijwerken mislukt');
   }
+}
+
+// ─── Poules beheren ─────────────────────────────────────────────────────────────
+async function loadPoolsAdmin() {
+  const container = document.getElementById('pools-list');
+  const [users, pools] = await Promise.all([
+    fetch('/api/admin/users', { headers: AUTH.headers() }).then(r => r.json()),
+    fetch('/api/admin/pools', { headers: AUTH.headers() }).then(r => r.json())
+  ]);
+
+  if (!pools.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">Nog geen poules. Maak er hierboven een aan.</div>';
+    return;
+  }
+
+  container.innerHTML = pools.map(p => {
+    const members = new Set(p.members);
+    const nameEsc = p.name.replace(/'/g, "\\'");
+    const checks = users.map(u => `
+      <label style="display:inline-flex;align-items:center;gap:5px;margin:3px 14px 3px 0;font-size:0.85rem;white-space:nowrap">
+        <input type="checkbox" ${members.has(u.id) ? 'checked' : ''} onchange="togglePoolMember(${p.id}, ${u.id}, this.checked)">
+        ${u.username}${u.is_admin ? ' 👑' : ''}
+      </label>`).join('');
+    return `
+      <div style="border:1px solid var(--border, rgba(255,255,255,0.12));border-radius:8px;padding:0.75rem 1rem;margin-bottom:0.75rem">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem">
+          <strong>${p.name}</strong>
+          <span style="color:var(--text-muted);font-size:0.78rem">${p.members.length} ${p.members.length === 1 ? 'lid' : 'leden'}</span>
+          <span style="flex:1"></span>
+          <button class="btn-sm" onclick="renamePool(${p.id}, '${nameEsc}')">Hernoem</button>
+          <button class="btn-sm btn-danger" onclick="deletePool(${p.id}, '${nameEsc}')">Verwijder</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap">${checks}</div>
+      </div>`;
+  }).join('');
+}
+
+async function createPool() {
+  const input = document.getElementById('new-pool-name');
+  const err = document.getElementById('pools-error');
+  err.classList.remove('show');
+  const name = input.value.trim();
+  if (!name) { err.textContent = 'Voer een naam in.'; err.classList.add('show'); return; }
+
+  const res = await fetch('/api/admin/pools', {
+    method: 'POST', headers: AUTH.headers(), body: JSON.stringify({ name })
+  });
+  const data = await res.json();
+  if (!res.ok) { err.textContent = data.error || 'Aanmaken mislukt'; err.classList.add('show'); return; }
+  input.value = '';
+  loadPoolsAdmin();
+}
+
+async function renamePool(id, current) {
+  const name = prompt('Nieuwe naam voor de poule:', current);
+  if (!name || !name.trim()) return;
+  const res = await fetch(`/api/admin/pools/${id}`, {
+    method: 'PUT', headers: AUTH.headers(), body: JSON.stringify({ name: name.trim() })
+  });
+  if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Hernoemen mislukt'); return; }
+  loadPoolsAdmin();
+}
+
+async function deletePool(id, name) {
+  if (!confirm(`Poule "${name}" verwijderen? De deelnemers blijven bestaan, alleen de poule verdwijnt.`)) return;
+  const res = await fetch(`/api/admin/pools/${id}`, { method: 'DELETE', headers: AUTH.headers() });
+  if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Verwijderen mislukt'); return; }
+  loadPoolsAdmin();
+}
+
+async function togglePoolMember(poolId, userId, checked) {
+  const res = checked
+    ? await fetch(`/api/admin/pools/${poolId}/members`, {
+        method: 'POST', headers: AUTH.headers(), body: JSON.stringify({ user_id: userId })
+      })
+    : await fetch(`/api/admin/pools/${poolId}/members/${userId}`, {
+        method: 'DELETE', headers: AUTH.headers()
+      });
+  if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Bijwerken mislukt'); }
+  loadPoolsAdmin();
 }
 
 init();

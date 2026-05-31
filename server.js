@@ -27,6 +27,7 @@ try {
 app.use('/api', require('./routes/auth'));
 app.use('/api', require('./routes/predictions'));
 app.use('/api', require('./routes/bonus'));
+app.use('/api', require('./routes/pools'));
 app.use('/api', require('./routes/leaderboard'));
 app.use('/api', require('./routes/standings'));
 app.use('/api/admin', require('./routes/results'));

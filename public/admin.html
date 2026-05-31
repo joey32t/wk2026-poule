@@ -155,6 +155,23 @@
       </ul>
     </div>
 
+    <!-- Poules -->
+    <div class="admin-card admin-card-wide">
+      <h2>Poules beheren</h2>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem">Maak poules aan en wijs deelnemers toe. Iemand kan in meerdere poules zitten; voorspellingen tellen automatisch in elke poule. Wissel poules via het menu naast je naam bovenin.</p>
+      <div class="form-row" style="align-items:flex-end;margin-bottom:1rem">
+        <div class="form-group" style="flex:1">
+          <label>Nieuwe poule</label>
+          <input type="text" id="new-pool-name" class="admin-input" placeholder="Bijv. Familie">
+        </div>
+        <div class="form-group" style="flex:0">
+          <button class="btn-admin" onclick="createPool()">Aanmaken</button>
+        </div>
+      </div>
+      <div id="pools-error" class="error-msg"></div>
+      <div id="pools-list"><div style="color:var(--text-muted);font-size:0.85rem">Laden...</div></div>
+    </div>
+
     <!-- View All Predictions -->
     <div class="admin-card admin-card-wide">
       <h2>Alle Voorspellingen Bekijken</h2>

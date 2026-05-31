@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { resolveScope } = require('../db/pools-helpers');
 
 const router = express.Router();
 
@@ -8,16 +9,27 @@ const router = express.Router();
 // Keep in sync with STAGE_DEADLINES.group in routes/predictions.js.
 const BONUS_DEADLINE = '2026-06-11T20:00:00+02:00';
 
-// GET /api/bonus – all users' bonus predictions (visibility handled client-side,
-// mirroring GET /api/predictions which also returns everyone's picks).
-router.get('/bonus', (_req, res) => {
-  const rows = db.prepare(`
+// GET /api/bonus[?pool_id=2] – bonus predictions, scoped to a poule (visibility
+// handled client-side, mirroring GET /api/predictions).
+router.get('/bonus', requireAuth, (req, res) => {
+  const scope = resolveScope(req);
+  if (!scope.ok) return res.status(scope.status).json({ error: scope.error });
+
+  const select = `
     SELECT b.user_id, u.username, b.champion, b.top_scorer,
            b.champion_awarded, b.top_scorer_awarded, b.updated_at
     FROM bonus_predictions b
-    JOIN users u ON u.id = b.user_id
-    ORDER BY u.username
-  `).all();
+    JOIN users u ON u.id = b.user_id`;
+
+  let rows;
+  if (scope.userIds === null) {
+    rows = db.prepare(`${select} ORDER BY u.username`).all();
+  } else if (scope.userIds.length === 0) {
+    rows = [];
+  } else {
+    const ph = scope.userIds.map(() => '?').join(',');
+    rows = db.prepare(`${select} WHERE b.user_id IN (${ph}) ORDER BY u.username`).all(...scope.userIds);
+  }
   res.json(rows);
 });
 

@@ -1,5 +1,7 @@
 const express = require('express');
 const db = require('../db/database');
+const { requireAuth } = require('../middleware/auth');
+const { resolveScope } = require('../db/pools-helpers');
 
 const router = express.Router();
 
@@ -46,8 +48,20 @@ function calcPoints(stage, resultHome, resultAway, predHome, predAway, etHome, e
   return total;
 }
 
-router.get('/leaderboard', (_req, res) => {
-  const users = db.prepare('SELECT id, username FROM users ORDER BY username').all();
+router.get('/leaderboard', requireAuth, (req, res) => {
+  const scope = resolveScope(req);
+  if (!scope.ok) return res.status(scope.status).json({ error: scope.error });
+
+  let users;
+  if (scope.userIds === null) {
+    users = db.prepare('SELECT id, username FROM users ORDER BY username').all();
+  } else if (scope.userIds.length === 0) {
+    users = [];
+  } else {
+    const ph = scope.userIds.map(() => '?').join(',');
+    users = db.prepare(`SELECT id, username FROM users WHERE id IN (${ph}) ORDER BY username`)
+      .all(...scope.userIds);
+  }
 
   const finishedMatches = db.prepare(
     'SELECT * FROM matches WHERE result_home IS NOT NULL AND result_away IS NOT NULL'

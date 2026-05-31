@@ -73,4 +73,20 @@ db.exec(`
   );
 `);
 
+// Poules: named competitions. Users can belong to several poules at once.
+// Predictions/bonus stay global per user — poules only scope visibility + ranking.
+// Safe to run on an existing DB. ON DELETE CASCADE relies on foreign_keys = ON (set above).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS pools (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS pool_members (
+    pool_id INTEGER NOT NULL REFERENCES pools(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (pool_id, user_id)
+  );
+`);
+
 module.exports = db;

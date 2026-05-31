@@ -18,11 +18,25 @@ let allPredictions = {}; // keyed by match_id -> array of predictions
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
+  await AUTH.initPool();
+  if (AUTH.isNoPool()) { renderNoPool(); return; }
   await loadDeadlines();
   currentStage = detectCurrentStage();
   setupStageTabs();
   await loadStage(currentStage, currentGroup);
   startCountdown();
+}
+
+// Non-admin not assigned to any poule yet — nothing to predict against.
+function renderNoPool() {
+  const tabs = document.getElementById('stage-tabs');
+  const groupTabs = document.getElementById('group-tabs');
+  const countdown = document.getElementById('countdown-bar');
+  if (tabs) tabs.style.display = 'none';
+  if (groupTabs) groupTabs.style.display = 'none';
+  if (countdown) countdown.style.display = 'none';
+  document.getElementById('matches-grid').innerHTML =
+    '<div class="loading">Je bent nog niet aan een poule toegewezen. Vraag de beheerder om je toe te voegen.</div>';
 }
 
 async function loadDeadlines() {
@@ -109,9 +123,9 @@ async function loadStage(stage, group) {
     return;
   }
 
-  // Fetch all predictions for all matches in parallel
+  // Fetch all predictions for all matches in parallel (scoped to the selected poule)
   const predResults = await Promise.all(
-    matches.map(m => fetch(`/api/predictions?match_id=${m.id}`).then(r => r.json()))
+    matches.map(m => fetch(`/api/predictions?match_id=${m.id}&${AUTH.poolQuery()}`, { headers: AUTH.headers() }).then(r => r.json()))
   );
   matches.forEach((m, i) => { allPredictions[m.id] = predResults[i]; });
 
@@ -276,7 +290,7 @@ async function renderBonusGame() {
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
 
-  const all = await fetch('/api/bonus').then(r => r.json());
+  const all = await fetch(`/api/bonus?${AUTH.poolQuery()}`, { headers: AUTH.headers() }).then(r => r.json());
   const mine = all.find(b => b.username.toLowerCase() === currentUser.username.toLowerCase());
 
   const esc = s => String(s).replace(/"/g, '&quot;');
@@ -388,7 +402,7 @@ function attachSaveHandlers() {
         showToast('Voorspelling opgeslagen!');
         // Refresh the match card
         const match = await fetch(`/api/matches?stage=${currentStage}${currentStage==='group'?'&group='+currentGroup:''}`).then(r=>r.json()).then(arr=>arr.find(m=>m.id===matchId));
-        const preds = await fetch(`/api/predictions?match_id=${matchId}`).then(r=>r.json());
+        const preds = await fetch(`/api/predictions?match_id=${matchId}&${AUTH.poolQuery()}`, { headers: AUTH.headers() }).then(r=>r.json());
         allPredictions[matchId] = preds;
         const card = document.getElementById(`match-${matchId}`);
         if (card && match) card.outerHTML = renderMatchCard(match);
