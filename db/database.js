@@ -57,4 +57,20 @@ db.exec(`
 });
 try { db.exec('ALTER TABLE matches ADD COLUMN is_manual INTEGER DEFAULT 0'); } catch {}
 
+// Bonus game ("Voorspel Vooraf"): one row per user with their champion + top-scorer
+// pick. champion_awarded / top_scorer_awarded are set manually by the admin (no
+// auto-checking). Safe to run on an existing DB — IF NOT EXISTS is a no-op if present.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS bonus_predictions (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id            INTEGER NOT NULL UNIQUE REFERENCES users(id),
+    champion           TEXT,
+    top_scorer         TEXT,
+    champion_awarded   INTEGER DEFAULT 0,
+    top_scorer_awarded INTEGER DEFAULT 0,
+    created_at         DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at         DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
 module.exports = db;

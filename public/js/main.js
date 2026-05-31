@@ -84,6 +84,18 @@ function updateGroupTabs() {
 // ─── Load Matches ────────────────────────────────────────────────────────────
 async function loadStage(stage, group) {
   const grid = document.getElementById('matches-grid');
+  const bonusView = document.getElementById('bonus-view');
+
+  // Bonus game ("Voorspel Vooraf") — show its own form instead of match cards
+  if (stage === 'bonus') {
+    grid.style.display = 'none';
+    bonusView.style.display = '';
+    await renderBonusGame();
+    return;
+  }
+  grid.style.display = '';
+  bonusView.style.display = 'none';
+
   grid.innerHTML = '<div class="loading">Laden...</div>';
 
   let url = `/api/matches?stage=${stage}`;
@@ -247,6 +259,101 @@ function renderPredictions(match, preds, currentUser, hasResult, isLocked) {
       `;
     }
   }).join('');
+}
+
+// ─── Bonus Game ("Voorspel Vooraf") ────────────────────────────────────────────
+async function renderBonusGame() {
+  const view = document.getElementById('bonus-view');
+  view.innerHTML = '<div class="loading">Laden...</div>';
+
+  const currentUser = AUTH.getUser();
+  const deadline = STAGE_DEADLINES.bonus;
+  const isLocked = deadline && new Date() >= new Date(deadline);
+
+  // The 48 participants come from the group-stage team names.
+  const groupMatches = await fetch('/api/matches?stage=group').then(r => r.json());
+  const teams = [...new Set(groupMatches.flatMap(m => [m.home_team, m.away_team]))]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+
+  const all = await fetch('/api/bonus').then(r => r.json());
+  const mine = all.find(b => b.username.toLowerCase() === currentUser.username.toLowerCase());
+
+  const esc = s => String(s).replace(/"/g, '&quot;');
+
+  // My own entry: editable form before lock, read-only after
+  let formHtml;
+  if (isLocked) {
+    const champHtml = mine && mine.champion
+      ? `${flagImg(mine.champion)} <span class="team-name">${mine.champion}</span>`
+      : '<span class="empty-pred">Niet ingevuld</span>';
+    const scorerHtml = mine && mine.top_scorer ? mine.top_scorer : '<span class="empty-pred">Niet ingevuld</span>';
+    formHtml = `
+      <div class="prediction-row mine"><span class="pred-username">Wereldkampioen (20)</span><span class="pred-result-display">${champHtml}</span></div>
+      <div class="prediction-row mine"><span class="pred-username">Topscorer (15)</span><span class="pred-result-display">${scorerHtml}</span></div>`;
+  } else {
+    const options = ['<option value="">— Kies een land —</option>']
+      .concat(teams.map(t => `<option value="${esc(t)}"${mine && mine.champion === t ? ' selected' : ''}>${t}</option>`))
+      .join('');
+    formHtml = `
+      <div class="form-group">
+        <label>Wereldkampioen <span style="color:var(--text-muted)">(20 punten)</span></label>
+        <select id="bonus-champion" class="admin-select">${options}</select>
+      </div>
+      <div class="form-group">
+        <label>Topscorer <span style="color:var(--text-muted)">(15 punten)</span></label>
+        <input type="text" id="bonus-topscorer" class="admin-input" placeholder="Naam van de speler" value="${mine && mine.top_scorer ? esc(mine.top_scorer) : ''}">
+      </div>
+      <button class="btn-primary" id="bonus-save-btn">Opslaan</button>`;
+  }
+
+  // Other participants (read-only). Hidden until lock, unless you're the admin.
+  const show = isLocked || currentUser.is_admin;
+  const others = all.filter(b => b.username.toLowerCase() !== currentUser.username.toLowerCase());
+  const othersHtml = others.length ? others.map(b => {
+    let val = '?';
+    if (show) {
+      const champ = b.champion ? `${flagImg(b.champion)} ${b.champion}` : '—';
+      val = `${champ} · ${b.top_scorer || '—'}`;
+    }
+    return `<div class="prediction-row"><span class="pred-username">${b.username}</span><span class="pred-result-display">${val}</span></div>`;
+  }).join('') : '<div class="empty-pred">Nog geen voorspellingen.</div>';
+
+  view.innerHTML = `
+    <div class="match-card" style="max-width:560px;margin:0 auto">
+      <div class="predictions-title" style="font-size:1rem;margin-bottom:0.75rem">🏆 Voorspel Vooraf</div>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">Voorspel vóór de start van het toernooi de <strong>wereldkampioen</strong> (20 punten) en de <strong>topscorer</strong> (15 punten). Te wijzigen tot de deadline van de groepsfase.</p>
+      ${formHtml}
+      <div class="predictions-section" style="margin-top:1rem">
+        <div class="predictions-title">Andere deelnemers</div>
+        ${othersHtml}
+      </div>
+    </div>`;
+
+  const saveBtn = document.getElementById('bonus-save-btn');
+  if (saveBtn) saveBtn.addEventListener('click', saveBonus);
+}
+
+async function saveBonus() {
+  const champion  = document.getElementById('bonus-champion').value;
+  const topScorer = document.getElementById('bonus-topscorer').value.trim();
+  const btn = document.getElementById('bonus-save-btn');
+
+  btn.disabled = true;
+  const res = await fetch('/api/bonus', {
+    method: 'POST',
+    headers: AUTH.headers(),
+    body: JSON.stringify({ champion, top_scorer: topScorer })
+  });
+  const data = await res.json();
+  btn.disabled = false;
+
+  if (!res.ok) {
+    showToast(data.error || 'Opslaan mislukt', true);
+  } else {
+    showToast('Bonusvoorspelling opgeslagen!');
+    renderBonusGame();
+  }
 }
 
 // ─── Save Predictions ─────────────────────────────────────────────────────────

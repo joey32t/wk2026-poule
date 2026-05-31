@@ -3,7 +3,7 @@ renderHeaderUser();
 
 const STAGE_LABELS = {
   group: 'Groep', r32: 'R32', r16: 'R16',
-  qf: 'QF', sf: 'HF', '3rd': '3e', final: 'Finale'
+  qf: 'QF', sf: 'HF', '3rd': '3e', final: 'Finale', bonus: 'Bonus'
 };
 
 async function loadLeaderboard() {

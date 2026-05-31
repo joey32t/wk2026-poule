@@ -72,6 +72,17 @@ router.get('/leaderboard', (_req, res) => {
       total += pts;
     }
 
+    // Bonus game ("Voorspel Vooraf") — admin-awarded champion (20) + top scorer (15)
+    const bonus = db.prepare(
+      'SELECT champion_awarded, top_scorer_awarded FROM bonus_predictions WHERE user_id = ?'
+    ).get(user.id);
+    const bonusPts = (bonus && bonus.champion_awarded ? 20 : 0)
+                   + (bonus && bonus.top_scorer_awarded ? 15 : 0);
+    if (bonusPts) {
+      breakdown.bonus = bonusPts;
+      total += bonusPts;
+    }
+
     return { username: user.username, total, breakdown };
   });
 

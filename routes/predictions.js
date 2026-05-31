@@ -76,9 +76,10 @@ router.post('/predictions', requireAuth, (req, res) => {
   res.json({ message: 'Voorspelling opgeslagen' });
 });
 
-// GET /api/deadlines – return all stage deadlines for frontend countdown
+// GET /api/deadlines – return all stage deadlines for frontend countdown.
+// `bonus` mirrors the group deadline so the "Vooraf" tab countdown needs no special case.
 router.get('/deadlines', (_req, res) => {
-  res.json(STAGE_DEADLINES);
+  res.json({ ...STAGE_DEADLINES, bonus: STAGE_DEADLINES.group });
 });
 
 // DELETE /api/predictions/:id  (admin only) — delete a single prediction by its ID

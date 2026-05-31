@@ -22,6 +22,7 @@ async function init() {
   allMatches = await res.json();
   populateMatchSelects();
   loadUsers();
+  loadBonusAdmin();
 }
 
 function populateMatchSelects() {
@@ -332,6 +333,52 @@ async function deletePrediction(predId, username, matchLabel) {
     alert(data.error || 'Wissen mislukt');
   } else {
     loadAdminPredictions(); // refresh table
+  }
+}
+
+// ─── Bonus Game (Winnaar & Topscorer) ──────────────────────────────────────────
+async function loadBonusAdmin() {
+  const container = document.getElementById('bonus-admin-table');
+  const [users, bonus] = await Promise.all([
+    fetch('/api/admin/users', { headers: AUTH.headers() }).then(r => r.json()),
+    fetch('/api/bonus').then(r => r.json())
+  ]);
+
+  const byUser = {};
+  bonus.forEach(b => { byUser[b.user_id] = b; });
+
+  const rows = users.map(u => {
+    const b = byUser[u.id] || {};
+    const champ  = b.champion   ? `${flagImg(b.champion)} ${b.champion}` : '<span style="color:var(--text-muted)">—</span>';
+    const scorer = b.top_scorer ? b.top_scorer                          : '<span style="color:var(--text-muted)">—</span>';
+    return `<tr>
+      <td style="white-space:nowrap"><strong>${u.username}</strong></td>
+      <td>${champ}</td>
+      <td>${scorer}</td>
+      <td style="text-align:center"><input type="checkbox" id="champ-${u.id}" ${b.champion_awarded ? 'checked' : ''} onchange="awardBonus(${u.id})"></td>
+      <td style="text-align:center"><input type="checkbox" id="scorer-${u.id}" ${b.top_scorer_awarded ? 'checked' : ''} onchange="awardBonus(${u.id})"></td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `<table class="pred-overview-table">
+    <thead><tr><th>Naam</th><th>Wereldkampioen</th><th>Topscorer</th><th>Kampioen (20)</th><th>Topscorer (15)</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+async function awardBonus(userId) {
+  const champion_awarded   = document.getElementById(`champ-${userId}`).checked;
+  const top_scorer_awarded = document.getElementById(`scorer-${userId}`).checked;
+
+  const res = await fetch(`/api/admin/bonus/${userId}/award`, {
+    method: 'PUT',
+    headers: AUTH.headers(),
+    body: JSON.stringify({ champion_awarded, top_scorer_awarded })
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    alert(data.error || 'Bijwerken mislukt');
   }
 }
 
