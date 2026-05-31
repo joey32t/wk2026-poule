@@ -6,6 +6,14 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// One-time password recovery: if RESET_PASSWORD is set, reset all users to it.
+// No-op unless the variable is present. See db/reset-passwords.js.
+try {
+  require('./db/reset-passwords').resetIfRequested();
+} catch (e) {
+  console.error('Password reset on boot failed:', e.message);
+}
+
 // Keep the live DB's schedule + bracket in step with db/schedule.js on every boot.
 // Safe + idempotent; never touches results or predictions. Runs here so a plain
 // `git push` self-corrects the deployment even if the start command isn't changed.
