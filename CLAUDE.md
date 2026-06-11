@@ -24,7 +24,7 @@ Players: Joey (admin), Annemieke, Mike, Shanna, Dave.
 | `tournament.js` | **Pure progression logic**: group standings (FIFA tiebreakers), third-place ranking, Annex C assignment, knockout cascade |
 | `routes/progression.js` | Bridges `tournament.js` ↔ DB: `recompute()` writes resolved team names; `snapshot()` for the API |
 | `middleware/auth.js` | `requireAuth` / `requireAdmin` JWT middleware |
-| `routes/predictions.js` | STAGE_DEADLINES, save/get predictions, DELETE single pred (admin) |
+| `routes/predictions.js` | STAGE_DEADLINES, `isLockedFor(userId, stage)` lock helper (exported), save/get predictions, DELETE single pred (admin), per-person phase unlock CRUD (`/api/admin/unlocks`, `/api/my-unlocks`) |
 | `routes/results.js` | Admin: enter/clear results (calls `progression.recompute()`); PUT manual team override (sets `is_manual`); POST `/matches/:id/auto` reverts to auto |
 | `routes/leaderboard.js` | Scoring logic — POINTS map + SECOND_CHANCE map + calcPoints() |
 | `routes/standings.js` | GET `/api/standings` — group tables, third ranking, resolved bracket |
@@ -80,6 +80,18 @@ is_manual                   ← 1 if admin overrode team names; auto-progression
 group: Jun 11 20:00 · r32: Jun 28 20:00 · r16: Jul 4 18:00
 qf: Jul 9 21:00 · sf: Jul 14 20:00 · 3rd: Jul 18 22:00 · final: Jul 19 20:00
 
+## Per-person phase unlock (admin override)
+Deadlines are the default lock for everyone. After a phase deadline passes, the admin can
+reopen one phase for one person (forgot a match → edit → re-lock manually).
+- **Truth:** table `prediction_unlocks (user_id, stage)` — a row's *presence* = unlocked for
+  that user+phase. `stage` is a deadline key (`group`…`final`) or `bonus` (Vooraf game; shares
+  the group deadline but unlocks independently). Re-lock = delete the row.
+- **Enforcement:** `isLockedFor(userId, stage)` in `routes/predictions.js` (exported, also used
+  by `routes/bonus.js`) = deadline passed AND no unlock row. Used in POST `/predictions` + POST `/bonus`.
+- **API:** `GET/POST/DELETE /api/admin/unlocks` (admin) · `GET /api/my-unlocks` (auth, drives the
+  editable UI). Frontend: `main.js` `isStageLocked()` + `myUnlocks` Set; admin grid
+  `loadUnlocksAdmin()`/`toggleUnlock()` in `admin.js`, card in `admin.html`.
+
 ## Railway setup
 - Start command: `node db/seed.js && node db/sync-schedule.js && node server.js`
   (seed only fills an empty DB; sync-schedule then corrects the schedule on the live DB each boot)
@@ -92,6 +104,7 @@ qf: Jul 9 21:00 · sf: Jul 14 20:00 · 3rd: Jul 18 22:00 · final: Jul 19 20:00
 - Delete individual predictions (in the "Alle voorspellingen" table)
 - Add users, reset passwords
 - Update knockout team names
+- Manually unlock/lock a prediction phase per person after its deadline ("Voorspellingen ontgrendelen" card)
 
 ## Deploy workflow
 ```bash
