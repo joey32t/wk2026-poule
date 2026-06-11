@@ -25,6 +25,7 @@ async function init() {
   loadUsers();
   loadPoolsAdmin();
   loadBonusAdmin();
+  loadUnlocksAdmin();
 }
 
 function populateMatchSelects() {
@@ -392,6 +393,71 @@ async function awardBonus(userId) {
     const data = await res.json().catch(() => ({}));
     alert(data.error || 'Bijwerken mislukt');
   }
+}
+
+// ─── Voorspellingen ontgrendelen (per persoon, per fase) ────────────────────────
+// Phases in display order; 'bonus' (Vooraf) shares the group deadline but unlocks
+// independently. STAGE_LABELS (top of file) covers the 7 match stages.
+const UNLOCK_PHASES = ['group', 'r32', 'r16', 'qf', 'sf', '3rd', 'final', 'bonus'];
+const UNLOCK_LABELS = { ...STAGE_LABELS, bonus: 'Vooraf' };
+
+async function loadUnlocksAdmin() {
+  const container = document.getElementById('unlocks-admin-table');
+  const poolId = AUTH.getPoolId();
+  const [users, unlocks, deadlines, pools] = await Promise.all([
+    fetch('/api/admin/users', { headers: AUTH.headers() }).then(r => r.json()),
+    fetch('/api/admin/unlocks', { headers: AUTH.headers() }).then(r => r.json()),
+    fetch('/api/deadlines').then(r => r.json()),
+    poolId ? fetch('/api/admin/pools', { headers: AUTH.headers() }).then(r => r.json()) : Promise.resolve(null)
+  ]);
+
+  const unlocked = new Set(unlocks.map(u => `${u.user_id}|${u.stage}`));
+  const now = new Date();
+  const deadlineFor = stage => deadlines[stage === 'bonus' ? 'group' : stage];
+  const passed = stage => { const d = deadlineFor(stage); return d && now >= new Date(d); };
+
+  // Match the poule filter used by the bonus grid.
+  let shownUsers = users;
+  if (poolId && pools) {
+    const p = pools.find(x => String(x.id) === String(poolId));
+    const members = new Set(p ? p.members : []);
+    shownUsers = users.filter(u => members.has(u.id));
+  }
+
+  const head = UNLOCK_PHASES.map(s => `<th style="text-align:center">${UNLOCK_LABELS[s]}</th>`).join('');
+  const rows = shownUsers.map(u => {
+    const cells = UNLOCK_PHASES.map(stage => {
+      if (!passed(stage)) {
+        // Before the deadline everyone can edit — an override would be a no-op.
+        return `<td style="text-align:center;color:var(--text-muted)" title="Deadline nog niet verstreken">open</td>`;
+      }
+      const isUnlocked = unlocked.has(`${u.id}|${stage}`);
+      const label = isUnlocked ? '🔓 Open' : '🔒 Dicht';
+      const cls = isUnlocked ? 'btn-unlock-open' : 'btn-unlock-closed';
+      return `<td style="text-align:center"><button class="unlock-toggle ${cls}" onclick="toggleUnlock(${u.id}, '${stage}', ${isUnlocked})">${label}</button></td>`;
+    }).join('');
+    return `<tr><td style="white-space:nowrap"><strong>${u.username}</strong></td>${cells}</tr>`;
+  }).join('');
+
+  container.innerHTML = `<table class="pred-overview-table">
+    <thead><tr><th>Naam</th>${head}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+async function toggleUnlock(userId, stage, currentlyUnlocked) {
+  const res = currentlyUnlocked
+    ? await fetch(`/api/admin/unlocks/${userId}/${stage}`, { method: 'DELETE', headers: AUTH.headers() })
+    : await fetch('/api/admin/unlocks', {
+        method: 'POST', headers: AUTH.headers(),
+        body: JSON.stringify({ user_id: userId, stage })
+      });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    alert(data.error || 'Bijwerken mislukt');
+    return;
+  }
+  loadUnlocksAdmin();
 }
 
 // ─── Poules beheren ─────────────────────────────────────────────────────────────

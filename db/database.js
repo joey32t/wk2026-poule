@@ -89,4 +89,17 @@ db.exec(`
   );
 `);
 
+// Per-person manual phase unlocks. A row's PRESENCE means the admin reopened this
+// phase for this user even though its deadline passed — lock again = delete the row.
+// Deadlines stay the default for everyone; this override only matters post-deadline.
+// `stage` is a deadline key ('group'…'final') or 'bonus'. Safe on the live volume.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS prediction_unlocks (
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    stage      TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, stage)
+  );
+`);
+
 module.exports = db;

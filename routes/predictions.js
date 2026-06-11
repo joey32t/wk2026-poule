@@ -16,6 +16,22 @@ const STAGE_DEADLINES = {
   final: '2026-07-19T20:00:00+02:00',
 };
 
+// Valid unlock phase keys: the 7 match stages + the bonus game ('bonus' shares the
+// group deadline but is unlocked independently).
+const UNLOCK_STAGES = new Set([...Object.keys(STAGE_DEADLINES), 'bonus']);
+
+// Single source of truth for "is this phase locked for this user right now?".
+// Before the deadline → open for everyone. After it → locked unless an admin added
+// a per-(user, phase) unlock row. Shared with routes/bonus.js.
+function isLockedFor(userId, stage) {
+  const deadline = stage === 'bonus' ? STAGE_DEADLINES.group : STAGE_DEADLINES[stage];
+  if (!deadline || new Date() < new Date(deadline)) return false;
+  const unlocked = db.prepare(
+    'SELECT 1 FROM prediction_unlocks WHERE user_id = ? AND stage = ?'
+  ).get(userId, stage);
+  return !unlocked;
+}
+
 // GET /api/matches?stage=group&group=F  OR  ?stage=r32  etc.
 router.get('/matches', (req, res) => {
   const { stage, group } = req.query;
@@ -73,8 +89,7 @@ router.post('/predictions', requireAuth, (req, res) => {
   const match = db.prepare('SELECT * FROM matches WHERE id = ?').get(match_id);
   if (!match) return res.status(404).json({ error: 'Wedstrijd niet gevonden' });
 
-  const deadline = STAGE_DEADLINES[match.stage];
-  if (deadline && new Date() >= new Date(deadline))
+  if (isLockedFor(req.user.id, match.stage))
     return res.status(403).json({ error: 'Deadline verstreken – voorspellingen zijn vergrendeld' });
 
   db.prepare(`
@@ -102,4 +117,39 @@ router.delete('/predictions/:id', requireAdmin, (req, res) => {
   res.json({ message: 'Voorspelling verwijderd' });
 });
 
+// GET /api/my-unlocks – phases the current user has been personally unlocked for.
+// Lets the editable UI know which post-deadline phases to reopen for this user.
+router.get('/my-unlocks', requireAuth, (req, res) => {
+  const rows = db.prepare('SELECT stage FROM prediction_unlocks WHERE user_id = ?').all(req.user.id);
+  res.json(rows.map(r => r.stage));
+});
+
+// GET /api/admin/unlocks – all per-(user, phase) unlock rows (admin grid state).
+router.get('/admin/unlocks', requireAdmin, (_req, res) => {
+  res.json(db.prepare('SELECT user_id, stage FROM prediction_unlocks').all());
+});
+
+// POST /api/admin/unlocks {user_id, stage} – reopen a phase for a user (idempotent).
+router.post('/admin/unlocks', requireAdmin, (req, res) => {
+  const userId = parseInt(req.body.user_id);
+  const stage = String(req.body.stage || '');
+  if (!Number.isInteger(userId) || !UNLOCK_STAGES.has(stage))
+    return res.status(400).json({ error: 'Ongeldige user_id of stage' });
+  if (!db.prepare('SELECT 1 FROM users WHERE id = ?').get(userId))
+    return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+
+  db.prepare('INSERT OR IGNORE INTO prediction_unlocks (user_id, stage) VALUES (?, ?)')
+    .run(userId, stage);
+  res.json({ message: 'Fase ontgrendeld' });
+});
+
+// DELETE /api/admin/unlocks/:userId/:stage – lock the phase again for that user.
+router.delete('/admin/unlocks/:userId/:stage', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM prediction_unlocks WHERE user_id = ? AND stage = ?')
+    .run(req.params.userId, req.params.stage);
+  res.json({ message: 'Fase vergrendeld' });
+});
+
 module.exports = router;
+module.exports.isLockedFor = isLockedFor;
+module.exports.STAGE_DEADLINES = STAGE_DEADLINES;

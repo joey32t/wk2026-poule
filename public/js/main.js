@@ -13,6 +13,7 @@ const STAGE_ORDER = ['group', 'r32', 'r16', 'qf', 'sf', '3rd', 'final'];
 let currentStage = 'group';
 let currentGroup = 'A';
 let deadlinesLoaded = false;
+let myUnlocks = new Set(); // phases the admin reopened for me (post-deadline override)
 let countdownInterval = null;
 let allPredictions = {}; // keyed by match_id -> array of predictions
 
@@ -44,6 +45,21 @@ async function loadDeadlines() {
   const data = await res.json();
   Object.assign(STAGE_DEADLINES, data);
   deadlinesLoaded = true;
+
+  // Phases the admin manually reopened for me (override the passed deadline).
+  try {
+    const unlocks = await fetch('/api/my-unlocks', { headers: AUTH.headers() }).then(r => r.json());
+    myUnlocks = new Set(Array.isArray(unlocks) ? unlocks : []);
+  } catch {
+    myUnlocks = new Set();
+  }
+}
+
+// Locked = deadline passed AND I have no personal unlock for this phase.
+function isStageLocked(stage) {
+  const deadline = STAGE_DEADLINES[stage];
+  if (!deadline || new Date() < new Date(deadline)) return false;
+  return !myUnlocks.has(stage);
 }
 
 function detectCurrentStage() {
@@ -140,8 +156,7 @@ function renderMatchCard(match) {
   const timeStr = kickoff.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit', timeZone:'Europe/Amsterdam' });
 
   const hasResult = match.result_home !== null && match.result_away !== null;
-  const deadline = STAGE_DEADLINES[match.stage];
-  const isLocked = deadline && new Date() >= new Date(deadline);
+  const isLocked = isStageLocked(match.stage);
 
   const preds = allPredictions[match.id] || [];
   const currentUser = AUTH.getUser();
@@ -281,8 +296,7 @@ async function renderBonusGame() {
   view.innerHTML = '<div class="loading">Laden...</div>';
 
   const currentUser = AUTH.getUser();
-  const deadline = STAGE_DEADLINES.bonus;
-  const isLocked = deadline && new Date() >= new Date(deadline);
+  const isLocked = isStageLocked('bonus');
 
   // The 48 participants come from the group-stage team names.
   const groupMatches = await fetch('/api/matches?stage=group').then(r => r.json());
@@ -435,9 +449,16 @@ function updateCountdownDisplay() {
   const diff = dl - now;
 
   if (diff <= 0) {
-    val.textContent = 'VERGRENDELD';
-    badge.style.display = '';
-    bar.classList.add('locked');
+    if (myUnlocks.has(currentStage)) {
+      // Deadline passed, but the admin reopened this phase just for me.
+      val.textContent = 'ONTGRENDELD DOOR BEHEERDER';
+      badge.style.display = 'none';
+      bar.classList.remove('locked');
+    } else {
+      val.textContent = 'VERGRENDELD';
+      badge.style.display = '';
+      bar.classList.add('locked');
+    }
   } else {
     bar.classList.remove('locked');
     badge.style.display = 'none';

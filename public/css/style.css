@@ -737,6 +737,21 @@ nav { display: flex; gap: 0.5rem; align-items: center; }
 }
 .btn-sm:hover { border-color: var(--orange); color: var(--orange); }
 
+/* Per-person phase unlock toggle (admin) */
+.unlock-toggle {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.55rem;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.btn-unlock-closed { background: transparent; color: var(--text-muted); }
+.btn-unlock-closed:hover { border-color: var(--orange); color: var(--orange); }
+.btn-unlock-open { background: rgba(0, 200, 100, 0.15); border-color: #1faf60; color: #2fd27a; }
+.btn-unlock-open:hover { border-color: var(--red); color: var(--red); }
+
 /* ─── Change Password Modal ─────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;

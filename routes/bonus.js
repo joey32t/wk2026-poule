@@ -2,12 +2,12 @@ const express = require('express');
 const db = require('../db/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { resolveScope } = require('../db/pools-helpers');
+const { isLockedFor } = require('./predictions');
 
 const router = express.Router();
 
-// The bonus game ("Voorspel Vooraf") locks at the group-stage deadline.
-// Keep in sync with STAGE_DEADLINES.group in routes/predictions.js.
-const BONUS_DEADLINE = '2026-06-11T20:00:00+02:00';
+// The bonus game ("Voorspel Vooraf") locks at the group-stage deadline, with the
+// same per-person unlock override as the match phases (stage key 'bonus').
 
 // GET /api/bonus[?pool_id=2] – bonus predictions, scoped to a poule (visibility
 // handled client-side, mirroring GET /api/predictions).
@@ -35,7 +35,7 @@ router.get('/bonus', requireAuth, (req, res) => {
 
 // POST /api/bonus – save or update the caller's champion + top scorer.
 router.post('/bonus', requireAuth, (req, res) => {
-  if (new Date() >= new Date(BONUS_DEADLINE))
+  if (isLockedFor(req.user.id, 'bonus'))
     return res.status(403).json({ error: 'Deadline verstreken – het bonusspel is vergrendeld' });
 
   const champion  = req.body.champion  != null ? String(req.body.champion).trim()  : '';
