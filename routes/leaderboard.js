@@ -2,51 +2,11 @@ const express = require('express');
 const db = require('../db/database');
 const { requireAuth } = require('../middleware/auth');
 const { resolveScope } = require('../db/pools-helpers');
+// Scoring (POINTS / SECOND_CHANCE / calcPoints) lives in the shared module so the
+// leaderboard and the on-screen per-prediction pills use the exact same point system.
+const { calcPoints } = require('../public/js/scoring');
 
 const router = express.Router();
-
-const POINTS = {
-  group: { winner: 1, exact: 2 },
-  r32:   { winner: 2, exact: 3 },
-  r16:   { winner: 3, exact: 4 },
-  qf:    { winner: 4, exact: 5 },
-  sf:    { winner: 5, exact: 7 },
-  '3rd': { winner: 5, exact: 7 },
-  final: { winner: 10, exact: 15 },
-};
-
-// Bonus points for second-chance (ET) in knockout stages
-const SECOND_CHANCE = {
-  r32: 1, r16: 1, qf: 1, sf: 2, '3rd': 2, final: 2,
-};
-
-function calcPoints(stage, resultHome, resultAway, predHome, predAway, etHome, etAway) {
-  const pts = POINTS[stage];
-  if (!pts) return 0;
-
-  const actualWinner = Math.sign(resultHome - resultAway);
-  const predWinner   = Math.sign(predHome - predAway);
-
-  let total = 0;
-  if (predHome === resultHome && predAway === resultAway) total = pts.exact;
-  else if (predWinner === actualWinner) total = pts.winner;
-
-  // Second-chance bonus: only for knockout stages when ET was played
-  const scPts = SECOND_CHANCE[stage];
-  if (scPts && etHome !== null && etHome !== undefined && etAway !== null && etAway !== undefined) {
-    const etWinner = Math.sign(etHome - etAway);
-
-    if (predWinner === 0 && actualWinner === 0 && etWinner === 0) {
-      // Predicted draw AND still draw after 120 min (went to penalties)
-      total += scPts;
-    } else if (predWinner !== 0 && etWinner !== 0 && predWinner === etWinner) {
-      // Predicted a team win AND that team won in ET → gets bonus
-      total += scPts;
-    }
-  }
-
-  return total;
-}
 
 router.get('/leaderboard', requireAuth, (req, res) => {
   const scope = resolveScope(req);

@@ -308,11 +308,13 @@ async function loadAdminPredictions() {
 
   const header = `<tr><th>Wedstrijd</th>${allUsers.map(u => `<th>${u}</th>`).join('')}</tr>`;
   const rows = matches.map(m => {
+    const hasResult = m.result_home !== null && m.result_away !== null;
     const cells = allUsers.map(u => {
       const p = predMap[m.id][u];
       if (!p) return `<td><span style="color:var(--text-muted)">—</span></td>`;
+      const pill = hasResult ? ` ${SCORING.predPointsPill(m, p)}` : '';
       return `<td>
-        <span>${p.pred_home}–${p.pred_away}</span>
+        <span>${p.pred_home}–${p.pred_away}</span>${pill}
         <button class="pred-del-btn" title="Wissen" onclick="deletePrediction(${p.id}, '${u}', '${m.home_team} vs ${m.away_team}')">✕</button>
       </td>`;
     }).join('');

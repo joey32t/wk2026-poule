@@ -26,14 +26,15 @@ Players: Joey (admin), Annemieke, Mike, Shanna, Dave.
 | `middleware/auth.js` | `requireAuth` / `requireAdmin` JWT middleware |
 | `routes/predictions.js` | STAGE_DEADLINES, `isLockedFor(userId, stage)` lock helper (exported), save/get predictions, DELETE single pred (admin), per-person phase unlock CRUD (`/api/admin/unlocks`, `/api/my-unlocks`) |
 | `routes/results.js` | Admin: enter/clear results (calls `progression.recompute()`); PUT manual team override (sets `is_manual`); POST `/matches/:id/auto` reverts to auto |
-| `routes/leaderboard.js` | Scoring logic — POINTS map + SECOND_CHANCE map + calcPoints() |
+| `public/js/scoring.js` | **Shared scoring module** (UMD: Node `require` + browser `window.SCORING`) — POINTS, SECOND_CHANCE, `calcPoints()`, `predPointsPill()`. Single source of truth for rankings + on-screen points |
+| `routes/leaderboard.js` | Leaderboard aggregation — totals + per-stage breakdown; `require`s `calcPoints` from `public/js/scoring.js` |
 | `routes/standings.js` | GET `/api/standings` — group tables, third ranking, resolved bracket |
 | `routes/users.js` | Admin: list/add/reset users |
 | `routes/auth.js` | Login, change-password |
 | `public/css/style.css` | Orange (#FF6200) + navy (#003893) dark theme |
 | `public/js/auth.js` | AUTH object, renderHeaderUser(), toggleMobileNav() |
 | `public/js/flags.js` | Shared `flagImg()` / `flagUrl()` — local SVG flags (works on Windows desktop) |
-| `public/js/main.js` | Stage tabs, match cards, predictions rendering |
+| `public/js/main.js` | Stage tabs, match cards, predictions rendering (incl. per-prediction points pill via `SCORING.predPointsPill`) |
 | `public/js/standings.js` | Stand page: group tables, best-3 ranking, bracket views |
 | `public/js/admin.js` | All admin panel logic |
 | `public/js/leaderboard.js` | Leaderboard render + prize display |
@@ -69,6 +70,10 @@ is_manual                   ← 1 if admin overrode team names; auto-progression
 | sf | 5 | 7 | +2 |
 | 3rd | 5 | 7 | +2 |
 | final | 10 | 15 | +2 |
+
+Points earned per prediction are shown as a coloured pill next to each score (matches page +
+admin "Alle voorspellingen" overview), computed by the same `calcPoints()` that drives the
+leaderboard — green = exact, orange = winner/partial (incl. ET bonus), muted = +0.
 
 ## Second-chance scoring rules
 - Only applies in knockout stages when `et_home`/`et_away` are set

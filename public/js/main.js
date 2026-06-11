@@ -225,6 +225,7 @@ function renderPredictions(match, preds, currentUser, hasResult, isLocked) {
 
     let statusClass = '';
     let statusDot = '';
+    let pointsPill = '';
     if (hasResult && pred) {
       const actualWinner = Math.sign(match.result_home - match.result_away);
       const predWinner   = Math.sign(pred.pred_home - pred.pred_away);
@@ -238,6 +239,7 @@ function renderPredictions(match, preds, currentUser, hasResult, isLocked) {
         statusClass = 'wrong';
         statusDot = '<span class="pred-status wrong"></span>';
       }
+      pointsPill = SCORING.predPointsPill(match, pred);
     }
 
     const rowClass = `prediction-row ${isMe ? 'mine' : ''} ${statusClass}`.trim();
@@ -266,6 +268,7 @@ function renderPredictions(match, preds, currentUser, hasResult, isLocked) {
           <span class="pred-username">${username}</span>
           <span class="pred-result-display">${displayStr}</span>
           ${statusDot}
+          ${show ? pointsPill : ''}
         </div>
       `;
     } else if (isMe && isLocked) {
